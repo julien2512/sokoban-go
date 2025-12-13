@@ -16,6 +16,7 @@ type Cell struct {
 type Board struct {
 	Width, Height int
 	Cells         []Cell
+	LastMove      *LastMove
 	Player        *Player
 }
 

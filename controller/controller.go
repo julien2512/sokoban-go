@@ -40,6 +40,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 			c.tryMovePlayer(direction.L)
 		case pixelgl.KeyRight:
 			c.tryMovePlayer(direction.R)
+		case pixelgl.KeyZ:
+			c.tryUndoLastMove()
 		case pixelgl.KeyR:
 			c.restartLevel()
 		}
@@ -56,8 +58,10 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 
 // tryMovePlayer - Move player (and an adjacent box where appropriate) in the specified direction if possible. Check for board completion (and handle appropriately) if a box is moved
 func (c *Controller) tryMovePlayer(dir direction.Direction) {
-	targetX := c.m.Board.Player.X
-	targetY := c.m.Board.Player.Y
+	lastX := c.m.Board.Player.X
+	lastY := c.m.Board.Player.Y
+	targetX := lastX
+	targetY := lastY
 	nextX := targetX
 	nextY := targetY
 
@@ -88,6 +92,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			} else if nextCell.HasBox {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
+				c.m.Board.LastMove = model.NewLastMove(lastX,lastY,targetCell,nextCell,c.m.Board.LastMove)
 				targetCell.HasBox = false
 				nextCell.HasBox = true
 				c.m.Board.Player.X = targetX
@@ -99,11 +104,26 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				}
 			}
 		} else {
+			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,nil,nil,c.m.Board.LastMove)
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
 			fmt.Printf("%v: Player moved (clear)\n", dir)
 		}
 	}
+}
+
+func (c *Controller) tryUndoLastMove() {
+	if c.m.Board.LastMove == nil {
+		return
+	}
+	c.m.Board.Player.X = c.m.Board.LastMove.LastX
+	c.m.Board.Player.Y = c.m.Board.LastMove.LastY
+	if c.m.Board.LastMove.LastTargetCell != nil {
+		c.m.Board.LastMove.LastTargetCell.HasBox = true
+		c.m.Board.LastMove.LastNextCell.HasBox = false
+	}
+	c.m.Board.LastMove = c.m.Board.LastMove.PreviousMove
+	fmt.Printf("Player undo last moved\n")
 }
 
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete
