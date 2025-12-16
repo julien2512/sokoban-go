@@ -7,10 +7,10 @@ import (
 	"io/ioutil"
 	"os"
 
+	pixel "github.com/gopxl/pixel/v2"
+	"github.com/gopxl/pixel/v2/ext/text"
+	"github.com/gopxl/pixel/v2/backends/opengl"
 	"github.com/TheInvader360/sokoban-go/model"
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/text"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/colornames"
 )
@@ -29,14 +29,14 @@ const (
 
 type View struct {
 	m           *model.Model
-	win         *pixelgl.Window
+	win         *opengl.Window
 	scaleFactor float64
 	text        *text.Text
 	sprites     []*pixel.Sprite
 }
 
 // NewView - Creates a view
-func NewView(m *model.Model, win *pixelgl.Window, scaleFactor float64) *View {
+func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 	fontFile, err := os.Open("assets/HackJack.ttf")
 	if err != nil {
 		panic(err)
@@ -99,7 +99,7 @@ func (v *View) Draw() {
 	case model.StatePlaying:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString("---Controls---\n\nCursors:  Move\nZ/W:      Undo\nR:       Reset\nEscape:   Quit", 48, 15)
+		v.printString("---Controls---\n\nCursors:  Move\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 15)
 	case model.StateLevelComplete:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)

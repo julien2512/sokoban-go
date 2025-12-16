@@ -3,9 +3,9 @@ package controller
 import (
 	"fmt"
 
+	pixelgl "github.com/gopxl/pixel/v2"
 	"github.com/TheInvader360/sokoban-go/direction"
 	"github.com/TheInvader360/sokoban-go/model"
-	"github.com/faiface/pixel/pixelgl"
 )
 
 type Controller struct {

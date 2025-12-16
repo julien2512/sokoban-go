@@ -6,8 +6,9 @@ import (
 	"github.com/TheInvader360/sokoban-go/controller"
 	"github.com/TheInvader360/sokoban-go/model"
 	"github.com/TheInvader360/sokoban-go/view"
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
+
+	pixelgl "github.com/gopxl/pixel/v2"
+	"github.com/gopxl/pixel/v2/backends/opengl"
 )
 
 const (
@@ -17,12 +18,12 @@ const (
 )
 
 func run() {
-	cfg := pixelgl.WindowConfig{
+	cfg := opengl.WindowConfig{
 		Title:  "Sokoban",
-		Bounds: pixel.R(0, 0, width*scaleFactor, height*scaleFactor),
+		Bounds: pixelgl.R(0, 0, width*scaleFactor, height*scaleFactor),
 		VSync:  true,
 	}
-	win, err := pixelgl.NewWindow(cfg)
+	win, err := opengl.NewWindow(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +31,7 @@ func run() {
 	m := model.NewModel()
 	v := view.NewView(m, win, scaleFactor)
 	c := controller.NewController(m)
-	lastKey := pixelgl.KeyUnknown
+	lastKey := pixelgl.UnknownButton
 	c.StartNewGame()
 
 	// Main game loop
@@ -61,12 +62,12 @@ func run() {
 				c.HandleInput(pixelgl.KeyRight)
 			}
 			lastKey = pixelgl.KeyRight
-		} else if win.Pressed(pixelgl.KeyZ) {
+		} else if win.Typed() == "z" {
 			if lastKey != pixelgl.KeyZ {
 				c.HandleInput(pixelgl.KeyZ)
 			}
 			lastKey = pixelgl.KeyZ
-		} else if win.Pressed(pixelgl.KeyR) {
+		} else if win.Typed() == "r" {
 			if lastKey != pixelgl.KeyR {
 				c.HandleInput(pixelgl.KeyR)
 			}
@@ -77,7 +78,7 @@ func run() {
 			}
 			lastKey = pixelgl.KeySpace
 		} else {
-			lastKey = pixelgl.KeyUnknown
+			lastKey = pixelgl.UnknownButton
 		}
 
 		m.Update()
@@ -89,5 +90,5 @@ func run() {
 }
 
 func main() {
-	pixelgl.Run(run)
+	opengl.Run(run)
 }
