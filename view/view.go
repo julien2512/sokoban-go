@@ -25,6 +25,11 @@ const (
 	SpriteGoalAndPlayer
 	SpriteGoalAndBox
 	SpriteLogo
+	SpritePlayerInFreeSpace
+	SpriteGoalInFreeSpace
+	SpriteGoalAndPlayerInFreeSpace
+	SpriteFreeSpace
+	SpriteFree
 )
 
 type View struct {
@@ -76,13 +81,18 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 		scaleFactor: scaleFactor,
 		text:        text,
 		sprites: []*pixel.Sprite{
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))),   // player
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))),  // box
-			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(0), float64(48), float64(16))),  // goal
-			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(0), float64(64), float64(16))),  // wall
-			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(0), float64(80), float64(16))),  // goal+player
-			pixel.NewSprite(pictureData, pixel.R(float64(80), float64(0), float64(96), float64(16))),  // goal+box
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(16), float64(112), float64(64))), // logo
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(16), float64(16), float64(32))),   // player
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(16), float64(32), float64(32))),  // box
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(16), float64(48), float64(32))),  // goal
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(16), float64(64), float64(32))),  // wall
+			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(16), float64(80), float64(32))),  // goal+player
+			pixel.NewSprite(pictureData, pixel.R(float64(80), float64(16), float64(96), float64(32))),  // goal+box
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(32), float64(112), float64(80))), // logo
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))), // player in freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(0), float64(48), float64(16))), // goal in freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(0), float64(80), float64(16))), // goal+player in freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))), // freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(0), float64(64), float64(16))),  // free
 		},
 	}
 
@@ -99,14 +109,14 @@ func (v *View) Draw() {
 	case model.StatePlaying:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString("---Controls---\n\nCursors:  Move\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 15)
+		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Space\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 14)
 	case model.StateLevelComplete:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
 		if v.m.TickAccumulator < 10 {
 			v.printString("LEVEL COMPLETE", 48, 12)
 		}
-		v.printString("---Controls---\n\nSpace:    Next\n              \nEscape:   Quit", 48, 15)
+		v.printString("---Controls---\n\nSpace:    Next\n              \nEscape:   Quit", 48, 14)
 	case model.StateGameComplete:
 		v.printString("GAME COMPLETE!", 16, 10)
 		if v.m.TickAccumulator < 10 {
@@ -120,7 +130,7 @@ func (v *View) Draw() {
 				}
 			}
 		}
-		v.printString("---Controls---\n\nSpace: Restart\n              \nEscape:   Quit", 48, 15)
+		v.printString("---Controls---\n\nSpace: Restart\n              \nEscape:   Quit", 48, 14)
 	}
 
 	v.win.Update()
@@ -130,7 +140,6 @@ func (v *View) drawBoard() {
 	if v.m.State != model.StateGameComplete {
 		boardOffsetX := ((22 - v.m.Board.Width) / 2) + 1
 		boardOffsetY := ((14 - v.m.Board.Height) / 2) + 1
-		v.drawBoardSprite(SpritePlayer, float64(v.m.Board.Player.X), float64(v.m.Board.Player.Y), float64(boardOffsetX), float64(boardOffsetY))
 		for y := 0; y < v.m.Board.Height; y++ {
 			for x := 0; x < v.m.Board.Width; x++ {
 				cell := v.m.Board.Get(x, y)
@@ -138,20 +147,33 @@ func (v *View) drawBoard() {
 				case model.CellTypeNone:
 					if cell.HasBox {
 						v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+					} else if cell.IsFree {
+						v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+					} else {
+						v.drawBoardSprite(SpriteFree, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					}
 				case model.CellTypeGoal:
 					if cell.HasBox {
 						v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
-						v.drawBoardSprite(SpriteGoalAndPlayer, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						if cell.IsFree {
+							v.drawBoardSprite(SpriteGoalAndPlayerInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						} else {
+							v.drawBoardSprite(SpriteGoalAndPlayer, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						}
 					} else {
-						v.drawBoardSprite(SpriteGoal, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						if cell.IsFree {
+							v.drawBoardSprite(SpriteGoalInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						} else {
+							v.drawBoardSprite(SpriteGoal, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						}
 					}
 				case model.CellTypeWall:
 					v.drawBoardSprite(SpriteWall, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 				}
 			}
 		}
+		v.drawBoardSprite(SpritePlayer, float64(v.m.Board.Player.X), float64(v.m.Board.Player.Y), float64(boardOffsetX), float64(boardOffsetY))
 	}
 }
 

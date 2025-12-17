@@ -10,6 +10,7 @@ import (
 
 type Controller struct {
 	m *model.Model
+	ShowFreeSpace bool
 }
 
 // NewController - Creates a controller
@@ -40,6 +41,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 			c.tryMovePlayer(direction.L)
 		case pixelgl.KeyRight:
 			c.tryMovePlayer(direction.R)
+		case pixelgl.KeyF:
+			c.toggleShowFreeSpace()
 		case pixelgl.KeyZ:
 			c.tryUndoLastMove()
 		case pixelgl.KeyR:
@@ -53,6 +56,17 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 		if key == pixelgl.KeySpace {
 			c.StartNewGame()
 		}
+	}
+}
+
+// toggle show/hide Free Space
+func (c *Controller) toggleShowFreeSpace() {
+	if (c.ShowFreeSpace) {
+		c.ShowFreeSpace = false
+		c.m.Board.ResetFreeSpace()
+	} else {
+		c.ShowFreeSpace = true
+		c.m.Board.CheckEveryFreeSpaceFromPlayer()
 	}
 }
 
@@ -109,6 +123,9 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			c.m.Board.Player.Y = targetY
 			fmt.Printf("%v: Player moved (clear)\n", dir)
 		}
+		if (c.ShowFreeSpace) {
+			c.m.Board.CheckEveryFreeSpaceFromPlayer()
+		}
 	}
 }
 
@@ -124,6 +141,10 @@ func (c *Controller) tryUndoLastMove() {
 	}
 	c.m.Board.LastMove = c.m.Board.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")
+
+	if (c.ShowFreeSpace) {
+			c.m.Board.CheckEveryFreeSpaceFromPlayer()
+	}
 }
 
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete

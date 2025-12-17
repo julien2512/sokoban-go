@@ -11,6 +11,7 @@ const (
 type Cell struct {
 	TypeOf cellType
 	HasBox bool
+	IsFree bool
 }
 
 type Board struct {
@@ -54,6 +55,32 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 	}
 
 	return &b
+}
+
+func (b *Board) ResetFreeSpace() {
+	for i :=0;i<len(b.Cells);i++ {
+		b.Cells[i].IsFree = false
+	}
+}
+
+// Private Checkup every Free Space from position
+func (b *Board) _CheckEveryFreeSpace(x, y int) {
+	c := b.Get(x,y)
+	if (c.TypeOf == CellTypeWall || c.HasBox || c.IsFree) {
+		return
+	}
+	c.IsFree = true
+	b._CheckEveryFreeSpace(x-1,y)
+	b._CheckEveryFreeSpace(x+1,y)
+	b._CheckEveryFreeSpace(x,y-1)
+	b._CheckEveryFreeSpace(x,y+1)
+}
+
+// Checkup every Free Space from player position
+func (b *Board) CheckEveryFreeSpaceFromPlayer() {
+	b.ResetFreeSpace()
+
+	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
 }
 
 // Get - Returns the cell at the given location
