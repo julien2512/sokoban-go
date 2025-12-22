@@ -154,7 +154,9 @@ func (c *Controller) tryStartNextLevel() {
 		l := c.m.LM.GetCurrentLevel()
 		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 		c.m.State = model.StatePlaying
-		c.ShowFreeSpace = false
+		if (c.ShowFreeSpace) {
+			c.m.Board.CheckEveryFreeSpaceFromPlayer()
+		}
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 	} else {
 		c.m.State = model.StateGameComplete
@@ -167,5 +169,8 @@ func (c *Controller) restartLevel() {
 	l := c.m.LM.GetCurrentLevel()
 	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 	c.m.State = model.StatePlaying
+	if (c.ShowFreeSpace) {
+			c.m.Board.CheckEveryFreeSpaceFromPlayer()
+	}
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 }
