@@ -154,6 +154,7 @@ func (c *Controller) tryStartNextLevel() {
 		l := c.m.LM.GetCurrentLevel()
 		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 		c.m.State = model.StatePlaying
+		c.ShowFreeSpace = false
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 	} else {
 		c.m.State = model.StateGameComplete
