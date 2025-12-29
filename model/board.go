@@ -1,5 +1,9 @@
 package model
 
+import (
+	"github.com/TheInvader360/sokoban-go/direction"
+)
+
 type cellType int
 
 const (
@@ -16,6 +20,26 @@ type Cell struct {
 	CanMoveUp bool
 	CanMoveLeft bool
 	CanMoveRight bool
+	ShallNotMoveDown bool
+	ShallNotMoveUp bool
+	ShallNotMoveLeft bool
+	ShallNotMoveRight bool
+}
+
+func getCharFromNum(i int32) string {
+	return string(65+i)
+}
+
+func getCellString(c Cell) string {
+	var i int32
+	if c.TypeOf == CellTypeNone { i = 0 
+	} else if c.TypeOf == CellTypeGoal { i = 1 
+	} else if c.TypeOf == CellTypeWall { i = 2 }
+
+	if c.HasBox { i = i + 3 }
+	if c.IsFree { i = i + 6 }
+
+	return getCharFromNum(i)
 }
 
 type Board struct {
@@ -61,47 +85,101 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 	return &b
 }
 
+func (b *Board) GetString() string {
+	var str string
+	for _, cell := range b.Cells {
+		str = str + getCellString(cell)
+	}
+	return str
+}
+
+func (b *Board) duplicate() *Board {
+	d := &Board{}
+	d.Width = b.Width
+	d.Height = b.Height
+
+	d.Cells = make([]Cell, b.Width*b.Height)
+
+	for i, cell := range b.Cells {
+		d.Cells[i].TypeOf = cell.TypeOf
+		d.Cells[i].HasBox = cell.HasBox
+		d.Cells[i].IsFree = cell.IsFree
+		d.Cells[i].CanMoveDown = cell.CanMoveDown
+		d.Cells[i].CanMoveUp = cell.CanMoveUp
+		d.Cells[i].CanMoveLeft = cell.CanMoveLeft
+		d.Cells[i].CanMoveRight = cell.CanMoveRight
+		d.Cells[i].ShallNotMoveUp = cell.ShallNotMoveUp
+		d.Cells[i].ShallNotMoveDown = cell.ShallNotMoveDown
+		d.Cells[i].ShallNotMoveLeft = cell.ShallNotMoveLeft
+		d.Cells[i].ShallNotMoveRight = cell.ShallNotMoveRight
+	}
+
+	d.Player = NewPlayer(b.Player.X,b.Player.Y)
+
+	return d
+}
+
 func (b *Board) _ResetCanBoxMove() {
 	for i :=0;i<len(b.Cells);i++ {
 		b.Cells[i].CanMoveLeft = false
 		b.Cells[i].CanMoveRight = false
 		b.Cells[i].CanMoveUp = false
 		b.Cells[i].CanMoveDown = false
+		b.Cells[i].ShallNotMoveLeft = false
+		b.Cells[i].ShallNotMoveRight = false
+		b.Cells[i].ShallNotMoveUp = false
+		b.Cells[i].ShallNotMoveDown = false
 	}
 }
 
-func (b *Board) _CheckOneBoxMove(x,y int) {
+func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]bool) {
 	c := b.Get(x,y)
-
+	
 	if (!c.HasBox) {
 		return
 	}
-
+	
 	cup := b.Get(x,y-1)
 	cdown := b.Get(x,y+1)
 	if (cup.IsFree && cdown.TypeOf != CellTypeWall && !cdown.HasBox) {
 		c.CanMoveDown = true
+		newBoard := b.duplicate()
+		newBoard._MoveBox(x,y,direction.D,boards)
+		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
+		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveDown = true }
 	}
 	if (cdown.IsFree && cup.TypeOf != CellTypeWall && !cup.HasBox) {
-		c.CanMoveUp = true		
+		c.CanMoveUp = true
+		newBoard := b.duplicate()
+		newBoard._MoveBox(x,y,direction.U,boards)
+		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
+		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveUp = true }
 	}
-
+	
 	cleft := b.Get(x-1,y)
 	cright := b.Get(x+1,y)
 	if (cleft.IsFree && cright.TypeOf != CellTypeWall && !cright.HasBox) {
 		c.CanMoveRight = true
+		newBoard := b.duplicate()
+		newBoard._MoveBox(x,y,direction.R,boards)
+		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
+		
+		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveRight = true }
 	}
 	if (cright.IsFree && cleft.TypeOf != CellTypeWall && !cleft.HasBox) {
-		c.CanMoveLeft = true		
+		c.CanMoveLeft = true
+		newBoard := b.duplicate()
+		newBoard._MoveBox(x,y,direction.L,boards)
+		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
+		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveLeft = true }
 	}
-
 }
 
-func (b *Board) _CheckEveryBoxMove() {
+func (b *Board) _CheckEveryBoxMove(boards map[string]bool) {
 	for i :=0;i<len(b.Cells);i++ {
 		y := i/b.Width
 		x := i%b.Width
-		b._CheckOneBoxMove(x,y)
+		b._CheckOneBoxMove(x,y,boards)
 	}
 }
 
@@ -125,12 +203,72 @@ func (b *Board) _CheckEveryFreeSpace(x, y int) {
 	b._CheckEveryFreeSpace(x,y+1)
 }
 
+func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]bool) {
+	boardName := b.GetString()
+
+	if !boards[boardName] {
+		boards[boardName] = true
+		b.ResetFreeSpace()
+		
+		b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
+		b._CheckEveryBoxMove(boards)
+	}
+}
+
 // Checkup every Free Space from player position
 func (b *Board) CheckEveryFreeSpaceFromPlayer() {
-	b.ResetFreeSpace()
+	boards := make(map[string]bool)
 
-	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
-	b._CheckEveryBoxMove()
+	b._CheckEveryFreeSpaceFromPlayer(boards)
+}
+
+// assume it
+func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]bool) {
+	b.Player.X = x
+	b.Player.Y = y
+	lastCell := b.Get(x,y)
+	var newCell *Cell
+	if dir == direction.L {
+		newCell = b.Get(x-1,y)
+	} else if dir == direction.R {
+		newCell = b.Get(x+1,y)		
+	} else if dir == direction.U {
+		newCell = b.Get(x,y-1)
+	} else if dir == direction.D {
+		newCell = b.Get(x,y+1)
+	}
+	lastCell.HasBox = false
+	newCell.HasBox = true
+	b._CheckEveryFreeSpaceFromPlayer(boards)
+}
+
+func (b *Board) GetBoxMoveNumber(number int) (int, int , direction.Direction) {
+	count := 0
+	for i :=0;i<len(b.Cells);i++ {
+		cell := &b.Cells[i]
+		y := i/b.Width
+		x := i%b.Width
+		if cell.CanMoveLeft { if count == number { return x, y, direction.L } 
+			              count = count+1 }
+		if cell.CanMoveRight { if count == number { return x, y, direction.R }
+                                       count = count+1 }
+		if cell.CanMoveUp { if count == number { return x, y, direction.U }
+                                    count = count+1 }
+		if cell.CanMoveDown { if count == number { return x, y, direction.D }
+                                      count = count+1 }
+	}
+	return 0,0,0
+}
+
+func (b *Board) GetBoxMoveCount() int {
+	count := 0
+	for _, cell := range b.Cells {
+		if cell.CanMoveLeft { count = count+1 }
+		if cell.CanMoveRight { count = count+1 }
+		if cell.CanMoveUp { count = count+1 }
+		if cell.CanMoveDown { count = count+1 }
+	}
+	return count
 }
 
 // Get - Returns the cell at the given location
