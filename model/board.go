@@ -119,20 +119,41 @@ func (b *Board) duplicate() *Board {
 	return d
 }
 
+func (b *Board) copyFrom(model *Board) {
+	b.Width = model.Width
+	b.Height = model.Height
+	b.Player = NewPlayer(model.Player.X,model.Player.Y)
+	b.Cells = make([]Cell, b.Width*b.Height)
+
+	for i, cell := range model.Cells {
+		b.Cells[i].TypeOf = cell.TypeOf
+		b.Cells[i].HasBox = cell.HasBox
+		b.Cells[i].IsFree = cell.IsFree
+		b.Cells[i].CanMoveDown = cell.CanMoveDown
+		b.Cells[i].CanMoveUp = cell.CanMoveUp
+		b.Cells[i].CanMoveLeft = cell.CanMoveLeft
+		b.Cells[i].CanMoveRight = cell.CanMoveRight
+		b.Cells[i].ShallNotMoveUp = cell.ShallNotMoveUp
+		b.Cells[i].ShallNotMoveDown = cell.ShallNotMoveDown
+		b.Cells[i].ShallNotMoveLeft = cell.ShallNotMoveLeft
+		b.Cells[i].ShallNotMoveRight = cell.ShallNotMoveRight
+	} 
+}
+
 func (b *Board) _ResetCanBoxMove() {
 	for i :=0;i<len(b.Cells);i++ {
 		b.Cells[i].CanMoveLeft = false
 		b.Cells[i].CanMoveRight = false
 		b.Cells[i].CanMoveUp = false
 		b.Cells[i].CanMoveDown = false
-		b.Cells[i].ShallNotMoveLeft = false
-		b.Cells[i].ShallNotMoveRight = false
-		b.Cells[i].ShallNotMoveUp = false
-		b.Cells[i].ShallNotMoveDown = false
+		b.Cells[i].ShallNotMoveLeft = true
+		b.Cells[i].ShallNotMoveRight = true
+		b.Cells[i].ShallNotMoveUp = true
+		b.Cells[i].ShallNotMoveDown = true
 	}
 }
 
-func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]bool) {
+func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	c := b.Get(x,y)
 	
 	if (!c.HasBox) {
@@ -145,15 +166,13 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]bool) {
 		c.CanMoveDown = true
 		newBoard := b.duplicate()
 		newBoard._MoveBox(x,y,direction.D,boards)
-		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
-		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveDown = true }
+		if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.IsComplete() { c.ShallNotMoveDown = false }
 	}
 	if (cdown.IsFree && cup.TypeOf != CellTypeWall && !cup.HasBox) {
 		c.CanMoveUp = true
 		newBoard := b.duplicate()
 		newBoard._MoveBox(x,y,direction.U,boards)
-		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
-		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveUp = true }
+		if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.IsComplete() { c.ShallNotMoveUp = false }
 	}
 	
 	cleft := b.Get(x-1,y)
@@ -162,20 +181,18 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]bool) {
 		c.CanMoveRight = true
 		newBoard := b.duplicate()
 		newBoard._MoveBox(x,y,direction.R,boards)
-		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
 		
-		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveRight = true }
+		if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.IsComplete() { c.ShallNotMoveRight = false }
 	}
 	if (cright.IsFree && cleft.TypeOf != CellTypeWall && !cleft.HasBox) {
 		c.CanMoveLeft = true
 		newBoard := b.duplicate()
 		newBoard._MoveBox(x,y,direction.L,boards)
-		newBoard._CheckEveryFreeSpaceFromPlayer(boards)
-		if newBoard.GetBoxMoveCount() == 0 && !newBoard.IsComplete() { c.ShallNotMoveLeft = true }
+		if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.IsComplete() { c.ShallNotMoveLeft = false }
 	}
 }
 
-func (b *Board) _CheckEveryBoxMove(boards map[string]bool) {
+func (b *Board) _CheckEveryBoxMove(boards map[string]*Board) {
 	for i :=0;i<len(b.Cells);i++ {
 		y := i/b.Width
 		x := i%b.Width
@@ -203,27 +220,27 @@ func (b *Board) _CheckEveryFreeSpace(x, y int) {
 	b._CheckEveryFreeSpace(x,y+1)
 }
 
-func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]bool) {
+func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 	boardName := b.GetString()
 
-	if !boards[boardName] {
-		boards[boardName] = true
+	if boards[boardName] == nil {
+		boards[boardName] = b
 		b.ResetFreeSpace()
 		
 		b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
 		b._CheckEveryBoxMove(boards)
-	}
+	} else { b.copyFrom(boards[boardName]) }
 }
 
 // Checkup every Free Space from player position
 func (b *Board) CheckEveryFreeSpaceFromPlayer() {
-	boards := make(map[string]bool)
+	boards := make(map[string]*Board)
 
 	b._CheckEveryFreeSpaceFromPlayer(boards)
 }
 
 // assume it
-func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]bool) {
+func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]*Board) {
 	b.Player.X = x
 	b.Player.Y = y
 	lastCell := b.Get(x,y)
@@ -231,7 +248,7 @@ func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]boo
 	if dir == direction.L {
 		newCell = b.Get(x-1,y)
 	} else if dir == direction.R {
-		newCell = b.Get(x+1,y)		
+		newCell = b.Get(x+1,y)	
 	} else if dir == direction.U {
 		newCell = b.Get(x,y-1)
 	} else if dir == direction.D {
@@ -267,6 +284,17 @@ func (b *Board) GetBoxMoveCount() int {
 		if cell.CanMoveRight { count = count+1 }
 		if cell.CanMoveUp { count = count+1 }
 		if cell.CanMoveDown { count = count+1 }
+	}
+	return count
+}
+
+func (b *Board) GetGoodBoxMoveCount() int {
+	count := 0
+	for _, cell := range b.Cells {
+		if cell.CanMoveLeft && !cell.ShallNotMoveLeft { count = count+1 }
+		if cell.CanMoveRight && !cell.ShallNotMoveRight { count = count+1 }
+		if cell.CanMoveUp && !cell.ShallNotMoveUp { count = count+1 }
+		if cell.CanMoveDown && !cell.ShallNotMoveDown { count = count+1 }
 	}
 	return count
 }
