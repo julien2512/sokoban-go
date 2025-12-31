@@ -116,15 +116,15 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 					c.m.State = model.StateLevelComplete
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 				}
+				if (c.ShowFreeSpace) {
+					c.m.Board.CheckEveryFreeSpaceFromPlayer()
+				}
 			}
 		} else {
 			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,nil,nil,c.m.Board.LastMove)
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
 			fmt.Printf("%v: Player moved (clear)\n", dir)
-		}
-		if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryFreeSpaceFromPlayer()
 		}
 	}
 }
