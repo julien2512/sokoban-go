@@ -125,7 +125,7 @@ func (v *View) Draw() {
 	case model.StatePlaying:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Space\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 14)
+		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 14)
 	case model.StateLevelComplete:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
