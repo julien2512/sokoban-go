@@ -117,7 +117,9 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 				}
 				if (c.ShowFreeSpace) {
-					c.m.Board.CheckEveryFreeSpaceFromPlayer()
+					go func() {
+						c.m.Board.CheckEveryFreeSpaceFromPlayer()
+					}()
 				}
 			}
 		} else {
