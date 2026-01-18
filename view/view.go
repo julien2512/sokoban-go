@@ -11,6 +11,7 @@ import (
 	"github.com/gopxl/pixel/v2/ext/text"
 	"github.com/gopxl/pixel/v2/backends/opengl"
 	"github.com/TheInvader360/sokoban-go/model"
+	"github.com/TheInvader360/sokoban-go/direction"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/colornames"
 )
@@ -38,6 +39,10 @@ const (
 	SpriteBoxShallNotGoDown
 	SpriteBoxShallNotGoUp
 	SpriteBoxShallNotGoLeft
+	SpriteBoxShallGoRight
+	SpriteBoxShallGoDown
+	SpriteBoxShallGoUp
+	SpriteBoxShallGoLeft
 )
 
 type View struct {
@@ -89,26 +94,30 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 		scaleFactor: scaleFactor,
 		text:        text,
 		sprites: []*pixel.Sprite{
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(48), float64(16), float64(64))),   // player
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(48), float64(32), float64(64))),  // box
-			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(48), float64(48), float64(64))),  // goal
-			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(48), float64(64), float64(64))),  // wall
-			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(48), float64(80), float64(64))),  // goal+player
-			pixel.NewSprite(pictureData, pixel.R(float64(80), float64(48), float64(96), float64(64))),  // goal+box
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(64), float64(112), float64(112))), // logo
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(32), float64(16), float64(48))), // player in freespace
-			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(32), float64(48), float64(48))), // goal in freespace
-			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(32), float64(80), float64(48))), // goal+player in freespace
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(32), float64(32), float64(48))), // freespace
-			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(32), float64(64), float64(48))),  // free
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(16), float64(16), float64(32))),   // box go right
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(16), float64(32), float64(32))),  // box go down
-			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(16), float64(48), float64(32))),  // box go up
-			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(16), float64(64), float64(32))),  // box go left		
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))),   // box shall not go right
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))),  // box shall not go down
-			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(0), float64(48), float64(16))),  // box shall not go up
-			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(0), float64(64), float64(16))),  // box shall not go left		
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(64), float64(16), float64(80))),   // player
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(64), float64(32), float64(80))),  // box
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(64), float64(48), float64(80))),  // goal
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(64), float64(64), float64(80))),  // wall
+			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(64), float64(80), float64(80))),  // goal+player
+			pixel.NewSprite(pictureData, pixel.R(float64(80), float64(64), float64(96), float64(80))),  // goal+box
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(80), float64(112), float64(128))), // logo
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(48), float64(16), float64(64))), // player in freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(48), float64(48), float64(64))), // goal in freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(48), float64(80), float64(64))), // goal+player in freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(48), float64(32), float64(64))), // freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(48), float64(64), float64(64))),  // free
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(32), float64(16), float64(48))),   // box go right
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(32), float64(32), float64(48))),  // box go down
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(32), float64(48), float64(48))),  // box go up
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(32), float64(64), float64(48))),  // box go left		
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(16), float64(16), float64(32))),   // box shall not go right
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(16), float64(32), float64(32))),  // box shall not go down
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(16), float64(48), float64(32))),  // box shall not go up
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(16), float64(64), float64(32))),  // box shall not go left		
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))),   // box shall go right
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))),  // box shall go down
+			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(0), float64(48), float64(16))),  // box shall go up
+			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(0), float64(64), float64(16))),  // box shall go left		
 		},
 	}
 
@@ -155,19 +164,35 @@ func (v *View) Draw() {
 func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int) {
 	if cell.CanMoveDown { 
 		if cell.ShallNotMoveDown { v.drawBoardSprite(SpriteBoxShallNotGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
-		} else { v.drawBoardSprite(SpriteBoxGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		} else { 
+			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.D {
+				v.drawBoardSprite(SpriteBoxShallGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+			} else { v.drawBoardSprite(SpriteBoxGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		}
 	}
 	if cell.CanMoveUp { 
 		if cell.ShallNotMoveUp { v.drawBoardSprite(SpriteBoxShallNotGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
-		} else { v.drawBoardSprite(SpriteBoxGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		} else { 
+			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.U {
+				v.drawBoardSprite(SpriteBoxShallGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+			} else { v.drawBoardSprite(SpriteBoxGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		}
 	}
 	if cell.CanMoveLeft { 
 		if cell.ShallNotMoveLeft { v.drawBoardSprite(SpriteBoxShallNotGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-		} else { v.drawBoardSprite(SpriteBoxGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		} else { 
+			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.L {
+				v.drawBoardSprite(SpriteBoxShallGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+			} else { v.drawBoardSprite(SpriteBoxGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		}
 	}
 	if cell.CanMoveRight { 
 		if cell.ShallNotMoveRight { v.drawBoardSprite(SpriteBoxShallNotGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-		} else { v.drawBoardSprite(SpriteBoxGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		} else {
+			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.R {
+				v.drawBoardSprite(SpriteBoxShallGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+			} else { v.drawBoardSprite(SpriteBoxGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		}
 	}
 }
 
