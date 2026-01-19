@@ -45,7 +45,6 @@ func getCellString(c Cell) string {
 type Board struct {
 	Width, Height int
 	Cells         []Cell
-	LastMove      *LastMove
 	Player        *Player
 
 	BestDir direction.Direction

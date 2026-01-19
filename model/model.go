@@ -9,9 +9,10 @@ const (
 )
 
 type Model struct {
-	LM              *LevelManager
-	Board           *Board
+	LM             *LevelManager
+	Board          *Board
 	Boards		map[string]*Board
+	LastMove       *LastMove
 	State           state
 	TickAccumulator int
 }

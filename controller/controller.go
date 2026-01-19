@@ -106,7 +106,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			} else if nextCell.HasBox {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
-				c.m.Board.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.Board.LastMove)
+				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
 				targetCell.HasBox = false
 				nextCell.HasBox = true
 				c.m.Board.Player.X = targetX
@@ -123,7 +123,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				}
 			}
 		} else {
-			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,-1,-1,-1,-1,c.m.Board.LastMove)
+			c.m.LastMove = model.NewLastMove(lastX,lastY,-1,-1,-1,-1,c.m.LastMove)
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
 			fmt.Printf("%v: Player moved (clear)\n", dir)
@@ -132,16 +132,16 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 }
 
 func (c *Controller) tryUndoLastMove() {
-	if c.m.Board.LastMove == nil {
+	if c.m.LastMove == nil {
 		return
 	}
-	c.m.Board.Player.X = c.m.Board.LastMove.LastX
-	c.m.Board.Player.Y = c.m.Board.LastMove.LastY
-	if c.m.Board.LastMove.LastTargetX != -1 {
-		c.m.Board.Get(c.m.Board.LastMove.LastTargetX,c.m.Board.LastMove.LastTargetY).HasBox = true
-		c.m.Board.Get(c.m.Board.LastMove.LastNextX,c.m.Board.LastMove.LastNextY).HasBox = false
+	c.m.Board.Player.X = c.m.LastMove.LastX
+	c.m.Board.Player.Y = c.m.LastMove.LastY
+	if c.m.LastMove.LastTargetX != -1 {
+		c.m.Board.Get(c.m.LastMove.LastTargetX,c.m.LastMove.LastTargetY).HasBox = true
+		c.m.Board.Get(c.m.LastMove.LastNextX,c.m.LastMove.LastNextY).HasBox = false
 	}
-	c.m.Board.LastMove = c.m.Board.LastMove.PreviousMove
+	c.m.LastMove = c.m.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")
 
 	if (c.ShowFreeSpace) {
@@ -156,6 +156,7 @@ func (c *Controller) tryStartNextLevel() {
 		l := c.m.LM.GetCurrentLevel()
 		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 		c.m.Boards = make(map[string]*model.Board)
+		c.m.LastMove = nil
 		c.m.State = model.StatePlaying
 		if (c.ShowFreeSpace) {
 			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
@@ -172,6 +173,7 @@ func (c *Controller) restartLevel() {
 	l := c.m.LM.GetCurrentLevel()
 	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 	c.m.Boards = make(map[string]*model.Board)
+	c.m.LastMove = nil
 	c.m.State = model.StatePlaying
 	if (c.ShowFreeSpace) {
 			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
