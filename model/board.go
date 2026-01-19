@@ -100,7 +100,7 @@ func (b *Board) GetString() string {
 	return str
 }
 
-func (b *Board) duplicate() *Board {
+func (b *Board) Duplicate() *Board {
 	d := &Board{}
 	d.Width = b.Width
 	d.Height = b.Height
@@ -181,7 +181,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	cdown := b.Get(x,y+1)
 	if (cup.IsFree && cdown.TypeOf != CellTypeWall && !cdown.HasBox) {
 		c.CanMoveDown = true
-		newBoard := b.duplicate()
+		newBoard := b.Duplicate()
 		newBoard.BestLength = 1000
 		newBoard.BestX = -1
 		newBoard.BestY = -1
@@ -198,7 +198,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	}
 	if (cdown.IsFree && cup.TypeOf != CellTypeWall && !cup.HasBox) {
 		c.CanMoveUp = true
-		newBoard := b.duplicate()
+		newBoard := b.Duplicate()
 		newBoard.BestLength = 1000
 		newBoard.BestX = -1
 		newBoard.BestY = -1
@@ -218,7 +218,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	cright := b.Get(x+1,y)
 	if (cleft.IsFree && cright.TypeOf != CellTypeWall && !cright.HasBox) {
 		c.CanMoveRight = true
-		newBoard := b.duplicate()
+		newBoard := b.Duplicate()
 		newBoard.BestLength = 1000
 		newBoard.BestX = -1
 		newBoard.BestY = -1
@@ -235,7 +235,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	}
 	if (cright.IsFree && cleft.TypeOf != CellTypeWall && !cleft.HasBox) {
 		c.CanMoveLeft = true
-		newBoard := b.duplicate()
+		newBoard := b.Duplicate()
 		newBoard.BestLength = 1000
 		newBoard.BestX = -1
 		newBoard.BestY = -1

@@ -106,9 +106,10 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			} else if nextCell.HasBox {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
+				c.m.Board = c.m.Board.Duplicate()
 				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
-				targetCell.HasBox = false
-				nextCell.HasBox = true
+				c.m.Board.Get(targetX,targetY).HasBox = false
+				c.m.Board.Get(nextX,nextY).HasBox = true
 				c.m.Board.Player.X = targetX
 				c.m.Board.Player.Y = targetY
 				fmt.Printf("%v: Player moved (push)\n", dir)
@@ -135,6 +136,7 @@ func (c *Controller) tryUndoLastMove() {
 	if c.m.LastMove == nil {
 		return
 	}
+	c.m.Board = c.m.Board.Duplicate()
 	c.m.Board.Player.X = c.m.LastMove.LastX
 	c.m.Board.Player.Y = c.m.LastMove.LastY
 	if c.m.LastMove.LastTargetX != -1 {
