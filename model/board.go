@@ -282,23 +282,27 @@ func (b *Board) _CheckEveryFreeSpace(x, y int) {
 }
 
 func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
+	b.ResetFreeSpace()
+	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
+
 	boardName := b.GetString()
 
 	if boards[boardName] == nil {
 		boards[boardName] = b
-		b.ResetFreeSpace()
-		
-		b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
 		b._CheckEveryBoxMove(boards)
 	} else { b.copyFrom(boards[boardName]) }
 }
 
 // Checkup every Free Space from player position
 func (b *Board) CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
+	X := b.Player.X
+	Y := b.Player.Y
 	b.BestX = -1
 	b.BestY = -1
 	b.BestLength = 1000
 	b._CheckEveryFreeSpaceFromPlayer(boards)
+	b.Player = NewPlayer(X,Y)
+
 }
 
 // assume it
