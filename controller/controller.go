@@ -155,6 +155,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.LM.ProgressToNextLevel()
 		l := c.m.LM.GetCurrentLevel()
 		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
+		c.m.Boards = make(map[string]*model.Board)
 		c.m.State = model.StatePlaying
 		if (c.ShowFreeSpace) {
 			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
@@ -170,6 +171,7 @@ func (c *Controller) tryStartNextLevel() {
 func (c *Controller) restartLevel() {
 	l := c.m.LM.GetCurrentLevel()
 	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
+	c.m.Boards = make(map[string]*model.Board)
 	c.m.State = model.StatePlaying
 	if (c.ShowFreeSpace) {
 			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
