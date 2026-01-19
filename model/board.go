@@ -294,9 +294,7 @@ func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 }
 
 // Checkup every Free Space from player position
-func (b *Board) CheckEveryFreeSpaceFromPlayer() {
-	boards := make(map[string]*Board)
-
+func (b *Board) CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 	b.BestX = -1
 	b.BestY = -1
 	b.BestLength = 1000

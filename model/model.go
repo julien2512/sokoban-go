@@ -11,6 +11,7 @@ const (
 type Model struct {
 	LM              *LevelManager
 	Board           *Board
+	Boards		map[string]*Board
 	State           state
 	TickAccumulator int
 }
@@ -19,7 +20,7 @@ type Model struct {
 func NewModel() *Model {
 	m := Model{
 		LM: NewLevelManager(false),
-	}
+		Boards: make(map[string]*Board)	}
 
 	return &m
 }
