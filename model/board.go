@@ -170,6 +170,35 @@ func (b *Board) _ResetCanBoxMove() {
 	}
 }
 
+func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
+	c := b.Get(x,y)
+
+	if !c.HasBox || c.TypeOf == CellTypeGoal {
+		return false
+	}
+	cup := b.Get(x,y-1)
+	cdown := b.Get(x,y+1)
+	cleft := b.Get(x-1,y)
+	cright := b.Get(x+1,y)
+
+	if cup.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { return true }
+	if cup.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { return true }
+	if cdown.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { return true }
+	if cdown.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { return true }
+
+	return false
+}
+
+func (b *Board) _CheckEveryBoxIsDead() bool {
+	for i :=0;i<len(b.Cells);i++ {
+		y := i/b.Width
+		x := i%b.Width
+
+		if b._CheckOneBoxIsDead(x,y) { return true }
+	}
+	return false
+}
+
 func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	c := b.Get(x,y)
 	
@@ -322,7 +351,9 @@ func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]*Bo
 	lastCell.HasBox = false
 	newCell.HasBox = true
 	
-	if b.IsComplete() {
+	if b._CheckEveryBoxIsDead() {
+		b.BestLength = 1000
+	} else if b.IsComplete() {
 		b.BestLength = 0
 	} else { 
 		b._CheckEveryFreeSpaceFromPlayer(boards)
