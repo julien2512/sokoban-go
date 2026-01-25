@@ -194,13 +194,14 @@ func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
 }
 
 func (b *Board) _CheckEveryBoxIsDead() bool {
+	count := 0
 	for i :=0;i<len(b.Cells);i++ {
 		y := i/b.Width
 		x := i%b.Width
 
-		if b._CheckOneBoxIsDead(x,y) { return true }
+		if b._CheckOneBoxIsDead(x,y) { count++ }
 	}
-	return false
+	return count > 0
 }
 
 func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
