@@ -16,6 +16,7 @@ type Cell struct {
 	TypeOf cellType
 	HasBox bool
 	IsFree bool
+	IsDead bool
 	CanMoveDown bool
 	CanMoveUp bool
 	CanMoveLeft bool
@@ -111,6 +112,7 @@ func (b *Board) Duplicate() *Board {
 		d.Cells[i].TypeOf = cell.TypeOf
 		d.Cells[i].HasBox = cell.HasBox
 		d.Cells[i].IsFree = cell.IsFree
+		d.Cells[i].IsDead = cell.IsDead
 		d.Cells[i].CanMoveDown = cell.CanMoveDown
 		d.Cells[i].CanMoveUp = cell.CanMoveUp
 		d.Cells[i].CanMoveLeft = cell.CanMoveLeft
@@ -141,6 +143,7 @@ func (b *Board) copyFrom(model *Board) {
 		b.Cells[i].TypeOf = cell.TypeOf
 		b.Cells[i].HasBox = cell.HasBox
 		b.Cells[i].IsFree = cell.IsFree
+		b.Cells[i].IsDead = cell.IsDead
 		b.Cells[i].CanMoveDown = cell.CanMoveDown
 		b.Cells[i].CanMoveUp = cell.CanMoveUp
 		b.Cells[i].CanMoveLeft = cell.CanMoveLeft
@@ -159,6 +162,7 @@ func (b *Board) copyFrom(model *Board) {
 
 func (b *Board) _ResetCanBoxMove() {
 	for i :=0;i<len(b.Cells);i++ {
+		b.Cells[i].IsDead = false
 		b.Cells[i].CanMoveLeft = false
 		b.Cells[i].CanMoveRight = false
 		b.Cells[i].CanMoveUp = false
@@ -181,10 +185,10 @@ func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
 	cleft := b.Get(x-1,y)
 	cright := b.Get(x+1,y)
 
-	if cup.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { return true }
-	if cup.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { return true }
-	if cdown.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { return true }
-	if cdown.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { return true }
+	if cup.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { c.IsDead = true; return true }
+	if cup.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { c.IsDead = true; return true }
+	if cdown.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { c.IsDead = true; return true }
+	if cdown.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { c.IsDead = true; return true }
 
 	return false
 }
@@ -316,8 +320,14 @@ func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 	boardName := b.GetString()
 
 	if boards[boardName] == nil {
-		boards[boardName] = b
-		b._CheckEveryBoxMove(boards)
+		boards[boardName] = b		
+		if b._CheckEveryBoxIsDead() {
+			b.BestLength = 1000
+		} else if b.IsComplete() {
+			b.BestLength = 0
+		} else {		
+			b._CheckEveryBoxMove(boards)
+		}
 	} else { b.copyFrom(boards[boardName]) }
 }
 
@@ -351,13 +361,7 @@ func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]*Bo
 	lastCell.HasBox = false
 	newCell.HasBox = true
 	
-	if b._CheckEveryBoxIsDead() {
-		b.BestLength = 1000
-	} else if b.IsComplete() {
-		b.BestLength = 0
-	} else { 
-		b._CheckEveryFreeSpaceFromPlayer(boards)
-	}
+	b._CheckEveryFreeSpaceFromPlayer(boards)
 }
 
 func (b *Board) GetBoxMoveNumber(number int) (int, int , direction.Direction) {

@@ -25,6 +25,7 @@ const (
 	SpriteWall
 	SpriteGoalAndPlayer
 	SpriteGoalAndBox
+	SpriteBoxRedCross
 	SpriteLogo
 	SpritePlayerInFreeSpace
 	SpriteGoalInFreeSpace
@@ -100,6 +101,7 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(64), float64(64), float64(80))),  // wall
 			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(64), float64(80), float64(80))),  // goal+player
 			pixel.NewSprite(pictureData, pixel.R(float64(80), float64(64), float64(96), float64(80))),  // goal+box
+			pixel.NewSprite(pictureData, pixel.R(float64(96), float64(64), float64(112), float64(80))),  // box red cross
 			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(80), float64(112), float64(128))), // logo
 			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(48), float64(16), float64(64))), // player in freespace
 			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(48), float64(48), float64(64))), // goal in freespace
@@ -206,7 +208,8 @@ func (v *View) drawBoard() {
 				switch cell.TypeOf {
 				case model.CellTypeNone:
 					if cell.HasBox {
-						v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						if cell.IsDead { v.drawBoardSprite(SpriteBoxRedCross, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						} else { v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
 					} else if cell.IsFree {
 						v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
