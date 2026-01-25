@@ -204,6 +204,69 @@ func (b *Board) _CheckEveryBoxIsDead() bool {
 	return count > 0
 }
 
+func (b *Board) _CheckOneBoxIsTrapByDirWall(x,y int, dirx, diry int) bool {
+	c := b.Get(x,y)
+	if !c.HasBox { return false }
+	if c.IsDead { return true }
+	if c.TypeOf == CellTypeGoal { return false }
+	GoalCount := 0
+	BoxCount := 1
+	cUp := b.Get(x+dirx,y+diry)
+	if cUp.TypeOf != CellTypeWall { return false }
+
+	xRight := x-1*diry
+	yRight := y-1*dirx
+	for {
+		cRight := b.Get(xRight,yRight)
+		if cRight.TypeOf == CellTypeWall { break; }
+		if cRight.HasBox { BoxCount++ }
+		if cRight.TypeOf == CellTypeGoal { GoalCount++ }
+
+		cUp = b.Get(xRight+dirx,yRight+diry)
+		if cUp.TypeOf != CellTypeWall { return false }
+		xRight += -1*diry
+		yRight += -1*dirx
+	}
+	xLeft := x+1*diry
+	yLeft := y+1*dirx
+	for {
+		cLeft := b.Get(xLeft,yLeft)
+		if cLeft.TypeOf == CellTypeWall { break; }
+		if cLeft.HasBox { BoxCount++ }
+		if cLeft.TypeOf == CellTypeGoal { GoalCount++ }
+
+		cUp = b.Get(xLeft+dirx,yLeft+diry)
+		if cUp.TypeOf != CellTypeWall { return false }
+		xLeft += 1*diry
+		yLeft += 1*dirx
+	}
+	
+	if BoxCount > GoalCount {
+		c.IsDead = true
+		return true
+	} else { return false }
+}
+
+func (b *Board) _CheckEveryBoxIsTrapByWall() bool {
+	count := 0
+	for i :=0;i<len(b.Cells);i++ {
+		y := i/b.Width
+		x := i%b.Width
+		
+		if b._CheckOneBoxIsTrapByDirWall(x,y,0,-1) { count++ }
+		if b._CheckOneBoxIsTrapByDirWall(x,y,0,1) { count++ }
+		if b._CheckOneBoxIsTrapByDirWall(x,y,-1,0) { count++ }
+		if b._CheckOneBoxIsTrapByDirWall(x,y,1,0) { count++ }
+	}	
+	return count > 0
+}
+
+func (b *Board) _CheckEveryBoxIsTrap() bool {
+	traped := false
+	traped = traped || b._CheckEveryBoxIsTrapByWall()
+	return traped
+}
+
 func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	c := b.Get(x,y)
 	
@@ -321,8 +384,10 @@ func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 	boardName := b.GetString()
 
 	if boards[boardName] == nil {
-		boards[boardName] = b		
-		if b._CheckEveryBoxIsDead() {
+		boards[boardName] = b
+		dead := b._CheckEveryBoxIsDead()
+		trap := b._CheckEveryBoxIsTrap()
+		if dead || trap {
 			b.BestLength = 1000
 		} else if b.IsComplete() {
 			b.BestLength = 0
