@@ -110,6 +110,9 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
 				c.m.Board.Get(targetX,targetY).HasBox = false
 				c.m.Board.Get(nextX,nextY).HasBox = true
+				nextCell.Box = targetCell.Box
+				c.m.Board.Boxes[nextCell.Box].X = nextX
+				c.m.Board.Boxes[nextCell.Box].Y = nextY
 				c.m.Board.Player.X = targetX
 				c.m.Board.Player.Y = targetY
 				fmt.Printf("%v: Player moved (push)\n", dir)
@@ -140,8 +143,14 @@ func (c *Controller) tryUndoLastMove() {
 	c.m.Board.Player.X = c.m.LastMove.LastX
 	c.m.Board.Player.Y = c.m.LastMove.LastY
 	if c.m.LastMove.LastTargetX != -1 {
-		c.m.Board.Get(c.m.LastMove.LastTargetX,c.m.LastMove.LastTargetY).HasBox = true
-		c.m.Board.Get(c.m.LastMove.LastNextX,c.m.LastMove.LastNextY).HasBox = false
+		lastCell := c.m.Board.Get(c.m.LastMove.LastTargetX,c.m.LastMove.LastTargetY)
+		nextCell := c.m.Board.Get(c.m.LastMove.LastNextX,c.m.LastMove.LastNextY)
+		lastCell.HasBox = true
+		nextCell.HasBox = false
+		lastCell.Box = nextCell.Box
+		c.m.Board.Boxes[lastCell.Box].X = c.m.LastMove.LastTargetX
+		c.m.Board.Boxes[lastCell.Box].Y = c.m.LastMove.LastTargetY
+
 	}
 	c.m.LastMove = c.m.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")
