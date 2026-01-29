@@ -346,11 +346,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		box.IsCheckedDown = true
 		if (cup.IsFree && cdown.TypeOf != CellTypeWall && !cdown.HasBox) {
 			box.CanMoveDown = true
-			newBoard := b.Duplicate()
-			newBoard.BestLength = 1000
-			newBoard.BestX = -1
-			newBoard.BestY = -1
-			newBoard._MoveBox(x,y,direction.D,boards)
+			newBoard:= b._MoveBoxAndCheck(x,y,direction.D,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 {
 				box.ShallNotMoveDown = false
 				if newBoard.BestLength+1<b.BestLength {
@@ -366,11 +362,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		box.IsCheckedUp = true
 		if (cdown.IsFree && cup.TypeOf != CellTypeWall && !cup.HasBox) {
 			box.CanMoveUp = true
-			newBoard := b.Duplicate()
-			newBoard.BestLength = 1000
-			newBoard.BestX = -1
-			newBoard.BestY = -1
-			newBoard._MoveBox(x,y,direction.U,boards)
+			newBoard:= b._MoveBoxAndCheck(x,y,direction.U,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 {
 				box.ShallNotMoveUp = false
 				if newBoard.BestLength+1<b.BestLength {
@@ -389,11 +381,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		box.IsCheckedRight = true
 		if (cleft.IsFree && cright.TypeOf != CellTypeWall && !cright.HasBox) {
 			box.CanMoveRight = true
-			newBoard := b.Duplicate()
-			newBoard.BestLength = 1000
-			newBoard.BestX = -1
-			newBoard.BestY = -1
-			newBoard._MoveBox(x,y,direction.R,boards)
+			newBoard:= b._MoveBoxAndCheck(x,y,direction.R,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 {
 				box.ShallNotMoveRight = false
 				if newBoard.BestLength+1<b.BestLength {
@@ -409,11 +397,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		box.IsCheckedLeft = true
 		if (cright.IsFree && cleft.TypeOf != CellTypeWall && !cleft.HasBox) {
 			box.CanMoveLeft = true
-			newBoard := b.Duplicate()
-			newBoard.BestLength = 1000
-			newBoard.BestX = -1
-			newBoard.BestY = -1
-			newBoard._MoveBox(x,y,direction.L,boards)
+			newBoard:= b._MoveBoxAndCheck(x,y,direction.L,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 { 
 				box.ShallNotMoveLeft = false
 				if newBoard.BestLength+1<b.BestLength {
@@ -456,25 +440,14 @@ func (b *Board) _CheckEveryFreeSpace(x, y int) {
 }
 
 func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
-	b.ResetFreeSpace()
-	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
+	if b.BestLength==999 || b.BestLength ==0 { return }
 
-	boardName := b.GetString()
-
-	if boards[boardName] == nil {
-		boards[boardName] = b
-		if b._CheckEveryBoxIsTrap() {
-			b.BestLength = 999
-		} else if b.IsComplete() {
-			b.BestLength = 0
-		} else {
-			b._CheckEveryBoxMove(boards)
-		}
+	if b._CheckEveryBoxIsTrap() {
+		b.BestLength = 999
+	} else if b.IsComplete() {
+		b.BestLength = 0
 	} else {
-                b.copyFrom(boards[boardName])
-		if b.BestLength!=999 && b.BestLength!=0 {
-			//b._CheckEveryBoxMove(boards)  // there is an infinite loop inside too solve
-		}
+		b._CheckEveryBoxMove(boards)
 	}
 }
 
@@ -485,12 +458,18 @@ func (b *Board) CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 	b.BestX = -1
 	b.BestY = -1
 	b.BestLength = 1000
+	b.ResetFreeSpace()
+	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
 	b._CheckEveryFreeSpaceFromPlayer(boards)
 	b.Player = NewPlayer(X,Y)
 }
 
-// assume it
-func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]*Board) {
+
+func (b *Board) MoveBox(x,y int, dir direction.Direction) {
+	b.BestLength = 1000
+	b.BestX = -1
+	b.BestY = -1
+
 	lastCell := b.Get(x,y)
 	b.Player.X = x
 	b.Player.Y = y
@@ -512,8 +491,39 @@ func (b *Board) _MoveBox(x,y int, dir direction.Direction, boards map[string]*Bo
 	lastCell.HasBox = false
 	newCell.HasBox = true
 	newCell.Box = lastCell.Box
-	
-	b._CheckEveryFreeSpaceFromPlayer(boards)
+}
+
+func (b *Board) GetBoard(boards map[string]*Board) *Board {
+	b.ResetFreeSpace()
+	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
+
+	newBoard := b
+	boardName := newBoard.GetString()
+	tempBoard := boards[boardName]
+	if tempBoard == nil {
+		boards[boardName] = newBoard
+	} else {
+		tempBoard.Player.X = newBoard.Player.X
+		tempBoard.Player.Y = newBoard.Player.Y
+		newBoard = tempBoard 
+	}
+
+	return newBoard
+}
+
+func (b *Board) MakeMoveBox(x,y int, dir direction.Direction, boards map[string]*Board) *Board {
+	newBoard := b.Duplicate()
+	newBoard.MoveBox(x,y,dir)
+	return newBoard.GetBoard(boards)
+}
+
+// assume it
+func (b *Board) _MoveBoxAndCheck(x,y int, dir direction.Direction, boards map[string]*Board) *Board {
+	newboard := b.MakeMoveBox(x,y,dir,boards)
+
+	newboard._CheckEveryFreeSpaceFromPlayer(boards)
+
+	return newboard
 }
 
 func (b *Board) GetBoxMoveCount() int {

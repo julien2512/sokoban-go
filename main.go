@@ -88,7 +88,7 @@ func run() {
 
 		m.Update()
 
-		v.Draw()
+		v.Draw(c.ShowFreeSpace)
 
 		time.Sleep(50 * time.Millisecond)
 	}

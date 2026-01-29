@@ -106,15 +106,8 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			} else if nextCell.HasBox {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
-				c.m.Board = c.m.Board.Duplicate()
+				c.m.Board = c.m.Board.MakeMoveBox(targetX,targetY,dir,c.m.Boards)
 				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
-				c.m.Board.Get(targetX,targetY).HasBox = false
-				c.m.Board.Get(nextX,nextY).HasBox = true
-				nextCell.Box = targetCell.Box
-				c.m.Board.Boxes[nextCell.Box].X = nextX
-				c.m.Board.Boxes[nextCell.Box].Y = nextY
-				c.m.Board.Player.X = targetX
-				c.m.Board.Player.Y = targetY
 				fmt.Printf("%v: Player moved (push)\n", dir)
 				if c.m.Board.IsComplete() {
 					c.m.State = model.StateLevelComplete
@@ -150,7 +143,7 @@ func (c *Controller) tryUndoLastMove() {
 		lastCell.Box = nextCell.Box
 		c.m.Board.Boxes[lastCell.Box].X = c.m.LastMove.LastTargetX
 		c.m.Board.Boxes[lastCell.Box].Y = c.m.LastMove.LastTargetY
-
+		c.m.Board = c.m.Board.GetBoard(c.m.Boards)
 	}
 	c.m.LastMove = c.m.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")

@@ -127,18 +127,18 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 }
 
 // Draw - Draws a graphical representation of the model's current state (called once per main game loop iteration)
-func (v *View) Draw() {
+func (v *View) Draw(showFreeSpace bool) {
 	v.win.Clear(colornames.Black)
 
 	v.drawLogoSprite()
 
 	switch v.m.State {
 	case model.StatePlaying:
-		v.drawBoard()
+		v.drawBoard(showFreeSpace)
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
 		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 14)
 	case model.StateLevelComplete:
-		v.drawBoard()
+		v.drawBoard(showFreeSpace)
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
 		if v.m.TickAccumulator < 10 {
 			v.printString("LEVEL COMPLETE", 48, 12)
@@ -200,7 +200,7 @@ func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int)
 	}
 }
 
-func (v *View) drawBoard() {
+func (v *View) drawBoard(showFreeSpace bool) {
 	if v.m.State != model.StateGameComplete {
 		boardOffsetX := ((22 - v.m.Board.Width) / 2) + 1
 		boardOffsetY := ((14 - v.m.Board.Height) / 2) + 1
@@ -210,10 +210,10 @@ func (v *View) drawBoard() {
 				switch cell.TypeOf {
 				case model.CellTypeNone:
 					if cell.HasBox {
-						if v.m.Board.Boxes[cell.Box].IsDead { v.drawBoardSprite(SpriteBoxRedCross, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						if showFreeSpace && v.m.Board.Boxes[cell.Box].IsDead { v.drawBoardSprite(SpriteBoxRedCross, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 						} else { v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
-						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
-					} else if cell.IsFree {
+						if showFreeSpace { v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY) }
+					} else if showFreeSpace && cell.IsFree {
 						v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					} else {
 						v.drawBoardSprite(SpriteFree, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
@@ -224,13 +224,13 @@ func (v *View) drawBoard() {
 						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
 
 					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
-						if cell.IsFree {
+						if showFreeSpace && cell.IsFree {
 							v.drawBoardSprite(SpriteGoalAndPlayerInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 						} else {
 							v.drawBoardSprite(SpriteGoalAndPlayer, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 						}
 					} else {
-						if cell.IsFree {
+						if showFreeSpace && cell.IsFree {
 							v.drawBoardSprite(SpriteGoalInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 						} else {
 							v.drawBoardSprite(SpriteGoal, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
