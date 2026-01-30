@@ -66,7 +66,7 @@ func (c *Controller) toggleShowFreeSpace() {
 		c.m.Board.ResetFreeSpace()
 	} else {
 		c.ShowFreeSpace = true
-		c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
+		c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 	}
 }
 
@@ -115,7 +115,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				}
 				if (c.ShowFreeSpace) {
 					go func() {
-						c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
+						c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 					}()
 				}
 			}
@@ -149,7 +149,7 @@ func (c *Controller) tryUndoLastMove() {
 	fmt.Printf("Player undo last moved\n")
 
 	if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
+			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 	}
 }
 
@@ -163,7 +163,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.LastMove = nil
 		c.m.State = model.StatePlaying
 		if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
+			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 		}
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 	} else {
@@ -180,7 +180,7 @@ func (c *Controller) restartLevel() {
 	c.m.LastMove = nil
 	c.m.State = model.StatePlaying
 	if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryFreeSpaceFromPlayer(c.m.Boards)
+			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 	}
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 }

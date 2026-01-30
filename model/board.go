@@ -18,6 +18,7 @@ type Cell struct {
 	HasBox bool
 	IsFree bool
 	Box int
+	Dist int
 }
 
 type Box struct {
@@ -349,8 +350,8 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 			newBoard:= b._MoveBoxAndCheck(x,y,direction.D,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 {
 				box.ShallNotMoveDown = false
-				if newBoard.BestLength+1<b.BestLength {
-					b.BestLength = newBoard.BestLength+1
+				if newBoard.BestLength+1+cup.Dist<b.BestLength {
+					b.BestLength = newBoard.BestLength+1+cup.Dist
 					b.BestX = x
 					b.BestY = y
 					b.BestDir = direction.D
@@ -365,8 +366,8 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 			newBoard:= b._MoveBoxAndCheck(x,y,direction.U,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 {
 				box.ShallNotMoveUp = false
-				if newBoard.BestLength+1<b.BestLength {
-					b.BestLength = newBoard.BestLength+1
+				if newBoard.BestLength+1+cdown.Dist<b.BestLength {
+					b.BestLength = newBoard.BestLength+1+cdown.Dist
 					b.BestX = x
 					b.BestY = y
 					b.BestDir = direction.U
@@ -384,8 +385,8 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 			newBoard:= b._MoveBoxAndCheck(x,y,direction.R,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 {
 				box.ShallNotMoveRight = false
-				if newBoard.BestLength+1<b.BestLength {
-					b.BestLength = newBoard.BestLength+1
+				if newBoard.BestLength+1+cleft.Dist<b.BestLength {
+					b.BestLength = newBoard.BestLength+1+cleft.Dist
 					b.BestX = x
 					b.BestY = y
 					b.BestDir = direction.R
@@ -400,8 +401,8 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 			newBoard:= b._MoveBoxAndCheck(x,y,direction.L,boards)
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestLength == 0 { 
 				box.ShallNotMoveLeft = false
-				if newBoard.BestLength+1<b.BestLength {
-					b.BestLength = newBoard.BestLength+1
+				if newBoard.BestLength+1+cright.Dist<b.BestLength {
+					b.BestLength = newBoard.BestLength+1+cright.Dist
 					b.BestX = x
 					b.BestY = y
 					b.BestDir = direction.L
@@ -422,24 +423,55 @@ func (b *Board) _CheckEveryBoxMove(boards map[string]*Board) {
 func (b *Board) ResetFreeSpace() {
 	for i :=0;i<len(b.Cells);i++ {
 		b.Cells[i].IsFree = false
+		b.Cells[i].Dist = 999
 	}
 	b._ResetCanBoxMove()
 }
 
 // Private Checkup every Free Space from position
-func (b *Board) _CheckEveryFreeSpace(x, y int) {
+func (b *Board) _CheckEveryFreeSpace(x, y, dist int) {
 	c := b.Get(x,y)
-	if (c.TypeOf == CellTypeWall || c.HasBox || c.IsFree) {
+	if (c.TypeOf == CellTypeWall || c.HasBox || c.IsFree && dist >= c.Dist) {
 		return
 	}
+	c.Dist = dist
 	c.IsFree = true
-	b._CheckEveryFreeSpace(x-1,y)
-	b._CheckEveryFreeSpace(x+1,y)
-	b._CheckEveryFreeSpace(x,y-1)
-	b._CheckEveryFreeSpace(x,y+1)
+	b._CheckEveryFreeSpace(x-1,y,dist+1)
+	b._CheckEveryFreeSpace(x+1,y,dist+1)
+	b._CheckEveryFreeSpace(x,y-1,dist+1)
+	b._CheckEveryFreeSpace(x,y+1,dist+1)
 }
 
-func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
+func (b *Board) CheckEveryFreeSpace(x, y int) {
+	b.ResetFreeSpace()
+	b._CheckEveryFreeSpace(x,y,0)
+}
+
+func (b *Board) ResetDist() {
+	for i :=0;i<len(b.Cells);i++ {
+		b.Cells[i].Dist = 999
+	}
+}
+
+// Private Checkup every Free Space from position
+func (b *Board) _CheckEveryDist(x, y, dist int) {
+	c := b.Get(x,y)
+	if (!c.IsFree || dist >= c.Dist) {
+		return
+	}
+	c.Dist = dist
+	b._CheckEveryFreeSpace(x-1,y,dist+1)
+	b._CheckEveryFreeSpace(x+1,y,dist+1)
+	b._CheckEveryFreeSpace(x,y-1,dist+1)
+	b._CheckEveryFreeSpace(x,y+1,dist+1)
+}
+
+func (b *Board) CheckEveryDist(x, y int) {
+	b.ResetDist()
+	b._CheckEveryDist(x,y,0)
+}
+
+func (b *Board) _CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {
 	if b.BestLength==999 || b.BestLength ==0 { return }
 
 	if b._CheckEveryBoxIsTrap() {
@@ -452,15 +484,14 @@ func (b *Board) _CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
 }
 
 // Checkup every Free Space from player position
-func (b *Board) CheckEveryFreeSpaceFromPlayer(boards map[string]*Board) {
+func (b *Board) CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {
 	X := b.Player.X
 	Y := b.Player.Y
 	b.BestX = -1
 	b.BestY = -1
 	b.BestLength = 1000
-	b.ResetFreeSpace()
-	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
-	b._CheckEveryFreeSpaceFromPlayer(boards)
+	b.CheckEveryFreeSpace(b.Player.X,b.Player.Y)
+	b._CheckEveryBoxMoveFromPlayer(boards)
 	b.Player = NewPlayer(X,Y)
 }
 
@@ -494,8 +525,7 @@ func (b *Board) MoveBox(x,y int, dir direction.Direction) {
 }
 
 func (b *Board) GetBoard(boards map[string]*Board) *Board {
-	b.ResetFreeSpace()
-	b._CheckEveryFreeSpace(b.Player.X,b.Player.Y)
+	b.CheckEveryFreeSpace(b.Player.X,b.Player.Y)
 
 	newBoard := b
 	boardName := newBoard.GetString()
@@ -503,8 +533,11 @@ func (b *Board) GetBoard(boards map[string]*Board) *Board {
 	if tempBoard == nil {
 		boards[boardName] = newBoard
 	} else {
-		tempBoard.Player.X = newBoard.Player.X
-		tempBoard.Player.Y = newBoard.Player.Y
+		if tempBoard.Player.X != newBoard.Player.X || tempBoard.Player.Y != newBoard.Player.Y {
+			tempBoard.Player.X = newBoard.Player.X
+			tempBoard.Player.Y = newBoard.Player.Y
+			tempBoard.CheckEveryDist(tempBoard.Player.X,tempBoard.Player.Y)
+		}
 		newBoard = tempBoard 
 	}
 
@@ -521,7 +554,7 @@ func (b *Board) MakeMoveBox(x,y int, dir direction.Direction, boards map[string]
 func (b *Board) _MoveBoxAndCheck(x,y int, dir direction.Direction, boards map[string]*Board) *Board {
 	newboard := b.MakeMoveBox(x,y,dir,boards)
 
-	newboard._CheckEveryFreeSpaceFromPlayer(boards)
+	newboard._CheckEveryBoxMoveFromPlayer(boards)
 
 	return newboard
 }
