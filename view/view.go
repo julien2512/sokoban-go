@@ -221,7 +221,7 @@ func (v *View) drawBoard(showFreeSpace bool) {
 				case model.CellTypeGoal:
 					if cell.HasBox {
 						v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
+						if showFreeSpace { v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY) }
 
 					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
 						if showFreeSpace && cell.IsFree {

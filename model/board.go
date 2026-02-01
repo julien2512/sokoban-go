@@ -109,6 +109,8 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 		}
 	}
 
+	b._ResetCanBoxMove()
+
 	b.BestX = -1
 	b.BestY = -1
 	b.BestLength = 1000 // assume max length
@@ -181,42 +183,6 @@ func (b *Board) Duplicate() *Board {
 	d.Player = NewPlayer(b.Player.X,b.Player.Y)
 
 	return d
-}
-
-func (b *Board) copyFrom(model *Board) {
-	b.Width = model.Width
-	b.Height = model.Height
-	b.Player = NewPlayer(model.Player.X,model.Player.Y)
-	b.Cells = make([]Cell, b.Width*b.Height)
-	b.Boxes = make([]Box, len(model.Boxes))
-
-	for i, cell := range model.Cells {
-		b.Cells[i].TypeOf = cell.TypeOf
-		b.Cells[i].HasBox = cell.HasBox
-		b.Cells[i].IsFree = cell.IsFree
-		b.Cells[i].Box = cell.Box
-	}
-	for i, box := range model.Boxes {
-		b.Boxes[i].X = box.X
-		b.Boxes[i].Y = box.Y
-		b.Boxes[i].IsDead = box.IsDead
-		b.Boxes[i].CanMoveDown = box.CanMoveDown
-		b.Boxes[i].CanMoveUp = box.CanMoveUp
-		b.Boxes[i].CanMoveLeft = box.CanMoveLeft
-		b.Boxes[i].CanMoveRight = box.CanMoveRight
-		b.Boxes[i].ShallNotMoveUp = box.ShallNotMoveUp
-		b.Boxes[i].ShallNotMoveDown = box.ShallNotMoveDown
-		b.Boxes[i].ShallNotMoveLeft = box.ShallNotMoveLeft
-		b.Boxes[i].ShallNotMoveRight = box.ShallNotMoveRight
-		b.Boxes[i].IsCheckedDown = box.IsCheckedDown
-		b.Boxes[i].IsCheckedUp = box.IsCheckedUp
-		b.Boxes[i].IsCheckedLeft = box.IsCheckedLeft
-		b.Boxes[i].IsCheckedRight = box.IsCheckedRight
-	}
-	b.BestDir = model.BestDir
-	b.BestX = model.BestX
-	b.BestY = model.BestY
-	b.BestLength = model.BestLength
 }
 
 func (b *Board) _ResetCanBoxMove() {
@@ -335,7 +301,7 @@ func (b *Board) _CheckEveryBoxIsTrap() bool {
 
 func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	c := b.Get(x,y)
-	box := &b.Boxes[c.Box]
+	box := &(b.Boxes[c.Box])
 	
 	if (!c.HasBox) {
 		return
@@ -425,7 +391,6 @@ func (b *Board) ResetFreeSpace() {
 		b.Cells[i].IsFree = false
 		b.Cells[i].Dist = 999
 	}
-	b._ResetCanBoxMove()
 }
 
 // Private Checkup every Free Space from position
@@ -487,12 +452,10 @@ func (b *Board) _CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {
 func (b *Board) CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {
 	X := b.Player.X
 	Y := b.Player.Y
-	b.BestX = -1
-	b.BestY = -1
-	b.BestLength = 1000
 	b.CheckEveryFreeSpace(b.Player.X,b.Player.Y)
 	b._CheckEveryBoxMoveFromPlayer(boards)
 	b.Player = NewPlayer(X,Y)
+	b.CheckEveryDist(X,Y)
 }
 
 
@@ -532,6 +495,7 @@ func (b *Board) GetBoard(boards map[string]*Board) *Board {
 	tempBoard := boards[boardName]
 	if tempBoard == nil {
 		boards[boardName] = newBoard
+		newBoard._ResetCanBoxMove()
 	} else {
 		if tempBoard.Player.X != newBoard.Player.X || tempBoard.Player.Y != newBoard.Player.Y {
 			tempBoard.Player.X = newBoard.Player.X

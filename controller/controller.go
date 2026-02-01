@@ -63,9 +63,9 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 func (c *Controller) toggleShowFreeSpace() {
 	if (c.ShowFreeSpace) {
 		c.ShowFreeSpace = false
-		c.m.Board.ResetFreeSpace()
 	} else {
 		c.ShowFreeSpace = true
+		c.m.Board = c.m.Board.GetBoard(c.m.Boards)
 		c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 	}
 }
