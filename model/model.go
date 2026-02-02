@@ -15,6 +15,7 @@ type Model struct {
 	LastMove       *LastMove
 	State           state
 	TickAccumulator int
+	Moves		int
 }
 
 // NewModel - Creates a model

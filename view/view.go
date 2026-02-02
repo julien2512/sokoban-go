@@ -136,10 +136,12 @@ func (v *View) Draw(showFreeSpace bool) {
 	case model.StatePlaying:
 		v.drawBoard(showFreeSpace)
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
+		v.printString(fmt.Sprintf("Moves %02d", v.m.Moves), 48, 9)
 		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 14)
 	case model.StateLevelComplete:
 		v.drawBoard(showFreeSpace)
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
+		v.printString(fmt.Sprintf("Moves %02d", v.m.Moves), 48, 9)
 		if v.m.TickAccumulator < 10 {
 			v.printString("LEVEL COMPLETE", 48, 12)
 		}

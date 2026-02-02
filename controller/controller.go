@@ -106,6 +106,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			} else if nextCell.HasBox {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
+				c.m.Moves++
 				c.m.Board = c.m.Board.MakeMoveBox(targetX,targetY,dir,c.m.Boards)
 				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
 				fmt.Printf("%v: Player moved (push)\n", dir)
@@ -120,6 +121,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				}
 			}
 		} else {
+			c.m.Moves++
 			c.m.LastMove = model.NewLastMove(lastX,lastY,-1,-1,-1,-1,c.m.LastMove)
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
@@ -135,6 +137,7 @@ func (c *Controller) tryUndoLastMove() {
 	c.m.Board = c.m.Board.Duplicate()
 	c.m.Board.Player.X = c.m.LastMove.LastX
 	c.m.Board.Player.Y = c.m.LastMove.LastY
+	c.m.Moves--
 	if c.m.LastMove.LastTargetX != -1 {
 		lastCell := c.m.Board.Get(c.m.LastMove.LastTargetX,c.m.LastMove.LastTargetY)
 		nextCell := c.m.Board.Get(c.m.LastMove.LastNextX,c.m.LastMove.LastNextY)
@@ -162,6 +165,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.Boards = make(map[string]*model.Board)
 		c.m.LastMove = nil
 		c.m.State = model.StatePlaying
+		c.m.Moves = 0
 		if (c.ShowFreeSpace) {
 			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 		}
@@ -179,6 +183,7 @@ func (c *Controller) restartLevel() {
 	c.m.Boards = make(map[string]*model.Board)
 	c.m.LastMove = nil
 	c.m.State = model.StatePlaying
+	c.m.Moves = 0
 	if (c.ShowFreeSpace) {
 			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 	}
