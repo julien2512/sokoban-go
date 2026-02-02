@@ -166,9 +166,8 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.LastMove = nil
 		c.m.State = model.StatePlaying
 		c.m.Moves = 0
-		if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-		}
+		c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
+		c.m.BestMoves = c.m.Board.BestLength
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 	} else {
 		c.m.State = model.StateGameComplete
@@ -184,8 +183,7 @@ func (c *Controller) restartLevel() {
 	c.m.LastMove = nil
 	c.m.State = model.StatePlaying
 	c.m.Moves = 0
-	if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-	}
+	c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
+	c.m.BestMoves = c.m.Board.BestLength
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 }

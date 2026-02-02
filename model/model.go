@@ -16,6 +16,7 @@ type Model struct {
 	State           state
 	TickAccumulator int
 	Moves		int
+	BestMoves	int
 }
 
 // NewModel - Creates a model
