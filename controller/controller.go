@@ -107,24 +107,25 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
 				c.m.Moves++
-				c.m.Board = c.m.Board.MakeMoveBox(targetX,targetY,dir,c.m.Boards)
+				c.m.Board = c.m.Board.MoveBoxAndCheck(targetX,targetY,dir,c.m.Boards)
 				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
 				fmt.Printf("%v: Player moved (push)\n", dir)
 				if c.m.Board.IsComplete() {
 					c.m.State = model.StateLevelComplete
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 				}
-				if (c.ShowFreeSpace) {
-					go func() {
+				/*if (c.ShowFreeSpace) {
 						c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-					}()
-				}
+				}*/
 			}
 		} else {
 			c.m.Moves++
 			c.m.LastMove = model.NewLastMove(lastX,lastY,-1,-1,-1,-1,c.m.LastMove)
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
+			if (c.ShowFreeSpace) {
+					c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
+			}
 			fmt.Printf("%v: Player moved (clear)\n", dir)
 		}
 	}
@@ -167,7 +168,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.State = model.StatePlaying
 		c.m.Moves = 0
 		c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-		c.m.BestMoves = c.m.Board.BestLength
+		c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 	} else {
 		c.m.State = model.StateGameComplete
@@ -184,6 +185,6 @@ func (c *Controller) restartLevel() {
 	c.m.State = model.StatePlaying
 	c.m.Moves = 0
 	c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-	c.m.BestMoves = c.m.Board.BestLength
+	c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 }

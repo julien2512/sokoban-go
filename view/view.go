@@ -171,7 +171,7 @@ func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int)
 	if box.CanMoveDown { 
 		if box.ShallNotMoveDown { v.drawBoardSprite(SpriteBoxShallNotGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
 		} else { 
-			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.D {
+			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.D {
 				v.drawBoardSprite(SpriteBoxShallGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 			} else { v.drawBoardSprite(SpriteBoxGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 		}
@@ -179,7 +179,7 @@ func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int)
 	if box.CanMoveUp { 
 		if box.ShallNotMoveUp { v.drawBoardSprite(SpriteBoxShallNotGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
 		} else { 
-			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.U {
+			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.U {
 				v.drawBoardSprite(SpriteBoxShallGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 			} else { v.drawBoardSprite(SpriteBoxGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 		}
@@ -187,7 +187,7 @@ func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int)
 	if box.CanMoveLeft { 
 		if box.ShallNotMoveLeft { v.drawBoardSprite(SpriteBoxShallNotGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 		} else { 
-			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.L {
+			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.L {
 				v.drawBoardSprite(SpriteBoxShallGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 			} else { v.drawBoardSprite(SpriteBoxGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 		}
@@ -195,7 +195,7 @@ func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int)
 	if box.CanMoveRight { 
 		if box.ShallNotMoveRight { v.drawBoardSprite(SpriteBoxShallNotGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 		} else {
-			if v.m.Board.BestX!=x || v.m.Board.BestY!=y || v.m.Board.BestDir != direction.R {
+			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.R {
 				v.drawBoardSprite(SpriteBoxShallGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 			} else { v.drawBoardSprite(SpriteBoxGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 		}
