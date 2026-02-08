@@ -317,21 +317,21 @@ func (b *Board) _CheckEveryBoxIsTrap() bool {
 	return traped
 }
 
+// Assume x,y got a box
 func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 	c := b.Get(x,y)
 	box := &(b.Boxes[c.Box])
 	
-	if (!c.HasBox) {
-		return
-	}
-
 	fromx := b.Player.X
 	fromy := b.Player.Y
 	from := Position{X:fromx,Y:fromy}
 	to := Position{X:x,Y:y}
 	var XYCheckedAlready bool
-	if box.XYChecked[from] { XYCheckedAlready = true }
+	if box.XYChecked[from] {  // assume every direction is checked for that box
+		XYCheckedAlready = true
+	} 
 	
+
 	cup := b.Get(x,y-1)
 	cdown := b.Get(x,y+1)
 	if !box.IsCheckedDown {
@@ -352,6 +352,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		}
 	} else if !XYCheckedAlready && box.CanMoveDown && !box.ShallNotMoveDown {
 		newBoard:= b.GetOldMoveBox(x,y,direction.D,boards)
+		b.CheckEveryDist(fromx,fromy)
 		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cup.Dist<b.BestPositions[from].BestLength {
 			b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cup.Dist
 			b.BestPositions[from].BestX = x
@@ -377,6 +378,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		}
 	} else if !XYCheckedAlready && box.CanMoveUp && !box.ShallNotMoveUp {
 		newBoard:= b.GetOldMoveBox(x,y,direction.U,boards)
+		b.CheckEveryDist(fromx,fromy)
 		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cdown.Dist<b.BestPositions[from].BestLength {
 			b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cdown.Dist
 			b.BestPositions[from].BestX = x
@@ -405,6 +407,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		}
 	} else if !XYCheckedAlready && box.CanMoveRight && !box.ShallNotMoveRight {
 		newBoard:= b.GetOldMoveBox(x,y,direction.R,boards)
+		b.CheckEveryDist(fromx,fromy)
 		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cleft.Dist<b.BestPositions[from].BestLength {
 			b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cleft.Dist
 			b.BestPositions[from].BestX = x
@@ -430,6 +433,7 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 		}
 	} else if !XYCheckedAlready && box.CanMoveLeft && !box.ShallNotMoveLeft {
 		newBoard:= b.GetOldMoveBox(x,y,direction.L,boards)
+		b.CheckEveryDist(fromx,fromy)
 		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cright.Dist<b.BestPositions[from].BestLength {
 			b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cright.Dist
 			b.BestPositions[from].BestX = x
@@ -442,12 +446,15 @@ func (b *Board) _CheckOneBoxMove(x,y int,boards map[string]*Board) {
 }
 
 func (b *Board) _CheckEveryBoxMove(boards map[string]*Board) {
-
-	if b.BestPositions[Position{X:b.Player.X,Y:b.Player.Y}] == nil {
-		b.BestPositions[Position{X:b.Player.X,Y:b.Player.Y}] = &BestPosition{BestLength:1000,BestX:-1,BestY:-1}
+	PlayerPos := Position{X:b.Player.X,Y:b.Player.Y}
+	if b.BestPositions[PlayerPos] == nil {
+		b.BestPositions[PlayerPos] = &BestPosition{BestLength:1000,BestX:-1,BestY:-1}
 	}
-
+	
 	for i :=0;i<len(b.Boxes);i++ {
+		// it loses player pos because of oldmovebox uses
+		b.Player.X = PlayerPos.X
+		b.Player.Y = PlayerPos.Y
 		y := b.Boxes[i].Y
 		x := b.Boxes[i].X
 		b._CheckOneBoxMove(x,y,boards)
