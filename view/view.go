@@ -32,18 +32,18 @@ const (
 	SpriteGoalAndPlayerInFreeSpace
 	SpriteFreeSpace
 	SpriteFree
-	SpriteBoxGoRight
-	SpriteBoxGoDown
 	SpriteBoxGoUp
+	SpriteBoxGoDown
 	SpriteBoxGoLeft
-	SpriteBoxShallNotGoRight
-	SpriteBoxShallNotGoDown
+	SpriteBoxGoRight
 	SpriteBoxShallNotGoUp
+	SpriteBoxShallNotGoDown
 	SpriteBoxShallNotGoLeft
-	SpriteBoxShallGoRight
-	SpriteBoxShallGoDown
+	SpriteBoxShallNotGoRight
 	SpriteBoxShallGoUp
+	SpriteBoxShallGoDown
 	SpriteBoxShallGoLeft
+	SpriteBoxShallGoRight
 )
 
 type View struct {
@@ -108,18 +108,18 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(48), float64(80), float64(64))), // goal+player in freespace
 			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(48), float64(32), float64(64))), // freespace
 			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(48), float64(64), float64(64))),  // free
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(32), float64(16), float64(48))),   // box go right
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(32), float64(32), float64(48))),  // box go down
 			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(32), float64(48), float64(48))),  // box go up
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(32), float64(32), float64(48))),  // box go down
 			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(32), float64(64), float64(48))),  // box go left		
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(16), float64(16), float64(32))),   // box shall not go right
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(16), float64(32), float64(32))),  // box shall not go down
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(32), float64(16), float64(48))),   // box go right
 			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(16), float64(48), float64(32))),  // box shall not go up
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(16), float64(32), float64(32))),  // box shall not go down
 			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(16), float64(64), float64(32))),  // box shall not go left		
-			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))),   // box shall go right
-			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))),  // box shall go down
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(16), float64(16), float64(32))),   // box shall not go right
 			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(0), float64(48), float64(16))),  // box shall go up
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))),  // box shall go down
 			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(0), float64(64), float64(16))),  // box shall go left		
+			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))),   // box shall go right
 		},
 	}
 
@@ -165,41 +165,26 @@ func (v *View) Draw(showFreeSpace bool) {
 	v.win.Update()
 }
 
+
+
+func (v *View) drawArrowsDir(box *model.Box,x, y, boardOffsetX, boardOffsetY int, dir direction.Direction) {
+	if box.CanMove[dir] { 
+		if box.ShallNotMove[dir] { v.drawBoardSprite(SpriteBoxShallNotGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
+		} else { 
+			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != dir {
+				v.drawBoardSprite(SpriteBoxShallGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+			} else { v.drawBoardSprite(SpriteBoxGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
+		}
+	}
+}
+
 func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int) {
 	if !cell.HasBox { return }
 	box := v.m.Board.Boxes[cell.Box]
-	if box.CanMoveDown { 
-		if box.ShallNotMoveDown { v.drawBoardSprite(SpriteBoxShallNotGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
-		} else { 
-			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.D {
-				v.drawBoardSprite(SpriteBoxShallGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-			} else { v.drawBoardSprite(SpriteBoxGoDown, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
-		}
-	}
-	if box.CanMoveUp { 
-		if box.ShallNotMoveUp { v.drawBoardSprite(SpriteBoxShallNotGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) 
-		} else { 
-			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.U {
-				v.drawBoardSprite(SpriteBoxShallGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-			} else { v.drawBoardSprite(SpriteBoxGoUp, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
-		}
-	}
-	if box.CanMoveLeft { 
-		if box.ShallNotMoveLeft { v.drawBoardSprite(SpriteBoxShallNotGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-		} else { 
-			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.L {
-				v.drawBoardSprite(SpriteBoxShallGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-			} else { v.drawBoardSprite(SpriteBoxGoLeft, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
-		}
-	}
-	if box.CanMoveRight { 
-		if box.ShallNotMoveRight { v.drawBoardSprite(SpriteBoxShallNotGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-		} else {
-			if v.m.Board.GetBestPosition().BestX!=x || v.m.Board.GetBestPosition().BestY!=y || v.m.Board.GetBestPosition().BestDir != direction.R {
-				v.drawBoardSprite(SpriteBoxShallGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-			} else { v.drawBoardSprite(SpriteBoxGoRight, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
-		}
-	}
+	v.drawArrowsDir(&box,x,y,boardOffsetX,boardOffsetY,direction.U)
+	v.drawArrowsDir(&box,x,y,boardOffsetX,boardOffsetY,direction.D)
+	v.drawArrowsDir(&box,x,y,boardOffsetX,boardOffsetY,direction.L)
+	v.drawArrowsDir(&box,x,y,boardOffsetX,boardOffsetY,direction.R)
 }
 
 func (v *View) drawBoard(showFreeSpace bool) {
