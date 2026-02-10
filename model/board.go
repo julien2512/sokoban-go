@@ -18,7 +18,7 @@ type Cell struct {
 	HasBox bool
 	IsFree bool
 	Box int
-	Dist int
+	Dist map[Position]int
 }
 
 type Position struct {
@@ -320,8 +320,8 @@ func (b *Board) _CheckOneBoxMoveInDir(x,y, fromx,fromy int, box *Box, from, to P
 			if newBoard.GetGoodBoxMoveCount() > 0 || newBoard.BestPositions[to].BestLength == 0 {
 				box.ShallNotMove[dir] = false
 				b.CheckEveryDist(fromx,fromy)
-				if newBoard.BestPositions[to].BestLength+1+cup.Dist<b.BestPositions[from].BestLength {
-					b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cup.Dist
+				if newBoard.BestPositions[to].BestLength+1+cup.Dist[from]<b.BestPositions[from].BestLength {
+					b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cup.Dist[from]
 					b.BestPositions[from].BestX = x
 					b.BestPositions[from].BestY = y
 					b.BestPositions[from].BestDir = dir
@@ -331,8 +331,8 @@ func (b *Board) _CheckOneBoxMoveInDir(x,y, fromx,fromy int, box *Box, from, to P
 	} else if !box.XYChecked[from] && box.CanMove[dir] && !box.ShallNotMove[dir] {
 		newBoard:= b.GetOldMoveBox(x,y,dir,boards)
 		b.CheckEveryDist(fromx,fromy)
-		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cup.Dist<b.BestPositions[from].BestLength {
-			b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cup.Dist
+		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cup.Dist[from]<b.BestPositions[from].BestLength {
+			b.BestPositions[from].BestLength = newBoard.BestPositions[to].BestLength+1+cup.Dist[from]
 			b.BestPositions[from].BestX = x
 			b.BestPositions[from].BestY = y
 			b.BestPositions[from].BestDir = dir
@@ -374,54 +374,66 @@ func (b *Board) _CheckEveryBoxMove(boards map[string]*Board) {
 	}
 }
 
-func (b *Board) ResetFreeSpace() {
+func (b *Board) ResetFreeSpace(from Position) {
 	for i :=0;i<len(b.Cells);i++ {
 		b.Cells[i].IsFree = false
-		b.Cells[i].Dist = 999
+		if b.Cells[i].Dist == nil {
+			b.Cells[i].Dist = make(map[Position]int)
+		}
+		b.Cells[i].Dist[from] = 999
 	}
 }
 
 // Private Checkup every Free Space from position
-func (b *Board) _CheckEveryFreeSpace(x, y, dist int) {
+func (b *Board) _CheckEveryFreeSpace(from Position, x, y, dist int) {
 	c := b.Get(x,y)
-	if (c.TypeOf == CellTypeWall || c.HasBox || c.IsFree && dist >= c.Dist) {
+	if (c.TypeOf == CellTypeWall || c.HasBox || dist >= c.Dist[from]) {
 		return
 	}
-	c.Dist = dist
+	c.Dist[from] = dist
 	c.IsFree = true
-	b._CheckEveryFreeSpace(x-1,y,dist+1)
-	b._CheckEveryFreeSpace(x+1,y,dist+1)
-	b._CheckEveryFreeSpace(x,y-1,dist+1)
-	b._CheckEveryFreeSpace(x,y+1,dist+1)
+	b._CheckEveryFreeSpace(from,x-1,y,dist+1)
+	b._CheckEveryFreeSpace(from,x+1,y,dist+1)
+	b._CheckEveryFreeSpace(from,x,y-1,dist+1)
+	b._CheckEveryFreeSpace(from,x,y+1,dist+1)
 }
 
 func (b *Board) CheckEveryFreeSpace(x, y int) {
-	b.ResetFreeSpace()
-	b._CheckEveryFreeSpace(x,y,0)
+	from := Position{X:x,Y:y}
+	c := b.Get(x,y)
+	_, ok := c.Dist[from]
+	if ok { return } 
+	b.ResetFreeSpace(from)
+	b._CheckEveryFreeSpace(from,x,y,0)
 }
 
-func (b *Board) ResetDist() {
+func (b *Board) ResetDist(from Position) {
 	for i :=0;i<len(b.Cells);i++ {
-		b.Cells[i].Dist = 999
+		b.Cells[i].Dist[from] = 999
 	}
 }
 
 // Private Checkup every Free Space from position
-func (b *Board) _CheckEveryDist(x, y, dist int) {
+func (b *Board) _CheckEveryDist(from Position,x, y, dist int) {
 	c := b.Get(x,y)
-	if (!c.IsFree || dist >= c.Dist) {
+	if (!c.IsFree || dist >= c.Dist[from]) {
 		return
 	}
-	c.Dist = dist
-	b._CheckEveryDist(x-1,y,dist+1)
-	b._CheckEveryDist(x+1,y,dist+1)
-	b._CheckEveryDist(x,y-1,dist+1)
-	b._CheckEveryDist(x,y+1,dist+1)
+	c.Dist[from] = dist
+	b._CheckEveryDist(from,x-1,y,dist+1)
+	b._CheckEveryDist(from,x+1,y,dist+1)
+	b._CheckEveryDist(from,x,y-1,dist+1)
+	b._CheckEveryDist(from,x,y+1,dist+1)
 }
 
 func (b *Board) CheckEveryDist(x, y int) {
-	b.ResetDist()
-	b._CheckEveryDist(x,y,0)
+	from := Position{X:x,Y:y}
+	c := b.Get(x,y)
+	_, ok := c.Dist[from]
+	if ok { return }
+
+	b.ResetDist(from)
+	b._CheckEveryDist(from,x,y,0)
 }
 
 func (b *Board) _CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {

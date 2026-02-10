@@ -135,17 +135,17 @@ func (v *View) Draw(showFreeSpace bool) {
 	switch v.m.State {
 	case model.StatePlaying:
 		v.drawBoard(showFreeSpace)
-		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString(fmt.Sprintf("Moves %02d / %02d", v.m.Moves, v.m.BestMoves), 48, 9)
-		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 14)
+		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 45, 7)
+		v.printString(fmt.Sprintf("Moves %02d / %02d / %02d", v.m.Moves, v.m.BestMoves, v.m.Moves+v.m.Board.GetBestPosition().BestLength), 45, 9)
+		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 46, 14)
 	case model.StateLevelComplete:
 		v.drawBoard(showFreeSpace)
-		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString(fmt.Sprintf("Moves %02d / %02d", v.m.Moves, v.m.BestMoves), 48, 9)
+		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 45, 7)
+		v.printString(fmt.Sprintf("Moves %02d / %02d / %02d", v.m.Moves, v.m.BestMoves, v.m.Moves+v.m.Board.GetBestPosition().BestLength), 45, 9)
 		if v.m.TickAccumulator < 10 {
-			v.printString("LEVEL COMPLETE", 48, 12)
+			v.printString("LEVEL COMPLETE", 45, 12)
 		}
-		v.printString("---Controls---\n\nSpace:    Next\n              \nEscape:   Quit", 48, 14)
+		v.printString("---Controls---\n\nSpace:    Next\n              \nEscape:   Quit", 45, 14)
 	case model.StateGameComplete:
 		v.printString("GAME COMPLETE!", 16, 10)
 		if v.m.TickAccumulator < 10 {
@@ -159,7 +159,7 @@ func (v *View) Draw(showFreeSpace bool) {
 				}
 			}
 		}
-		v.printString("---Controls---\n\nSpace: Restart\n              \nEscape:   Quit", 48, 14)
+		v.printString("---Controls---\n\nSpace: Restart\n              \nEscape:   Quit", 45, 14)
 	}
 
 	v.win.Update()
@@ -233,7 +233,7 @@ func (v *View) drawBoard(showFreeSpace bool) {
 }
 
 func (v *View) drawLogoSprite() {
-	r := pixel.R(float64(384)*v.scaleFactor, v.win.Bounds().H()-float64(48)*v.scaleFactor, float64(496)*v.scaleFactor, v.win.Bounds().H()-float64(0)*v.scaleFactor)
+	r := pixel.R(float64(360)*v.scaleFactor, v.win.Bounds().H()-float64(48)*v.scaleFactor, float64(496)*v.scaleFactor, v.win.Bounds().H()-float64(0)*v.scaleFactor)
 	v.sprites[SpriteLogo].Draw(v.win, pixel.IM.ScaledXY(pixel.ZV, pixel.V(r.W()/v.sprites[SpriteLogo].Frame().W(), r.H()/v.sprites[SpriteLogo].Frame().H())).Moved(r.Center()))
 }
 

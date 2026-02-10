@@ -114,9 +114,9 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 					c.m.State = model.StateLevelComplete
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 				}
-				/*if (c.ShowFreeSpace) {
+				if (c.ShowFreeSpace) {
 						c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-				}*/
+				}
 			}
 		} else {
 			c.m.Moves++
