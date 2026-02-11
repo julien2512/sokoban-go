@@ -289,9 +289,74 @@ func (b *Board) _CheckEveryBoxIsTrapByWall() bool {
 	return count > 0
 }
 
+// assume x,y is a box
+func (b *Board) _CheckOneBoxIsStuck(x,y int, stuckCells map[*Cell]bool, freeCells map[*Cell]bool) bool {
+	cell := b.Get(x,y)
+	if freeCells[cell] {
+		return false
+	}
+	if stuckCells[cell] {
+		return true
+	}
+
+
+	cellup := b.Get(x,y-1)
+	celldown := b.Get(x,y+1)
+	cellleft := b.Get(x-1,y)
+	cellright := b.Get(x+1,y)
+	stuckup := cellup.TypeOf == CellTypeWall
+	stuckdown := celldown.TypeOf == CellTypeWall
+	stuckleft := cellleft.TypeOf == CellTypeWall
+	stuckright := cellright.TypeOf == CellTypeWall
+	
+	if cellup.HasBox { stuckup = true
+	} else { cellup = nil }
+	if celldown.HasBox { stuckdown = true
+	} else { celldown = nil }
+	if cellleft.HasBox { stuckleft = true
+	} else { cellleft = nil }
+	if cellright.HasBox { stuckright = true
+	} else { cellright = nil }
+	
+	if (!stuckup && !stuckdown) || (!stuckleft && !stuckright) {
+		freeCells[cell] = true
+		return false
+	} else {
+		stuckCells[cell] = true
+
+		if stuckup && cellup != nil { stuckup = b._CheckOneBoxIsStuck(x,y-1,stuckCells, freeCells) }
+		if stuckdown && celldown != nil { stuckdown = b._CheckOneBoxIsStuck(x,y+1,stuckCells, freeCells) }
+		if stuckleft && cellleft != nil { stuckleft = b._CheckOneBoxIsStuck(x-1,y,stuckCells, freeCells) }
+		if stuckright && cellright != nil { stuckright = b._CheckOneBoxIsStuck(x+1,y,stuckCells, freeCells) }
+		
+		if (!stuckup && !stuckdown) || (!stuckleft && !stuckright) {
+			delete(stuckCells, cell)
+			freeCells[cell] = true
+			return false
+		}
+		return true
+	}
+}
+
+func (b *Board) _CheckEveryBoxIsStuck() bool {
+	stuckCells := make(map[*Cell]bool)
+	freeCells := make(map[*Cell]bool)
+	
+	traped := false
+	for i :=0;i<len(b.Boxes);i++ {
+		box := &b.Boxes[i]
+		cell := b.Get(box.X,box.Y)
+		if b._CheckOneBoxIsStuck(box.X,box.Y,stuckCells,freeCells) && cell.TypeOf != CellTypeGoal {
+			box.IsDead = true
+			traped = true
+		}
+	}
+	return traped
+}
+
 func (b *Board) _CheckEveryBoxIsTrap() bool {
 	traped := false
-	traped = traped || b._CheckEveryBoxIsTrapByWall()
+	traped = b._CheckEveryBoxIsStuck() || b._CheckEveryBoxIsTrapByWall() || b._CheckEveryBoxIsDead()
 	return traped
 }
 
