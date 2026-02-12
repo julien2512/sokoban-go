@@ -7,6 +7,7 @@ require (
 	github.com/gopxl/pixel/v2 v2.3.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/image v0.19.0
+	golang.org/x/text v0.17.0
 )
 
 require (
@@ -29,7 +30,6 @@ require (
 	golang.org/x/sys v0.23.0 // indirect
 	golang.org/x/telemetry v0.0.0-20240521205824-bda55230c457 // indirect
 	golang.org/x/term v0.23.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7 // indirect
 	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 // indirect

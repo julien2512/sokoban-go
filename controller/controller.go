@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	pixelgl "github.com/gopxl/pixel/v2"
 	"github.com/TheInvader360/sokoban-go/direction"
@@ -114,18 +115,14 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 					c.m.State = model.StateLevelComplete
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 				}
-				if (c.ShowFreeSpace) {
-						c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-				}
+				c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 			}
 		} else {
 			c.m.Moves++
 			c.m.LastMove = model.NewLastMove(lastX,lastY,-1,-1,-1,-1,c.m.LastMove)
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
-			if (c.ShowFreeSpace) {
-					c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-			}
+			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 			fmt.Printf("%v: Player moved (clear)\n", dir)
 		}
 	}
@@ -157,18 +154,24 @@ func (c *Controller) tryUndoLastMove() {
 	}
 }
 
+func (c *Controller) loadLevel() {
+	l := c.m.LM.GetCurrentLevel()
+	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
+	c.m.Boards = make(map[string]*model.Board)
+	c.m.LastMove = nil
+	c.m.State = model.StatePlaying
+	c.m.Moves = 0
+	start := time.Now()		
+	c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
+	c.m.SolveDuration = time.Now().Sub(start)
+	c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
+}
+
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete
 func (c *Controller) tryStartNextLevel() {
 	if c.m.LM.HasNextLevel() {
 		c.m.LM.ProgressToNextLevel()
-		l := c.m.LM.GetCurrentLevel()
-		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
-		c.m.Boards = make(map[string]*model.Board)
-		c.m.LastMove = nil
-		c.m.State = model.StatePlaying
-		c.m.Moves = 0
-		c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-		c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
+		c.loadLevel()
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 	} else {
 		c.m.State = model.StateGameComplete
@@ -178,13 +181,6 @@ func (c *Controller) tryStartNextLevel() {
 
 // restartLevel - Resets the game board to the current level's starting state
 func (c *Controller) restartLevel() {
-	l := c.m.LM.GetCurrentLevel()
-	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
-	c.m.Boards = make(map[string]*model.Board)
-	c.m.LastMove = nil
-	c.m.State = model.StatePlaying
-	c.m.Moves = 0
-	c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-	c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
+	c.loadLevel()
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 }

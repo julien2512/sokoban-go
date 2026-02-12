@@ -1,5 +1,9 @@
 package model
 
+import (
+	"time"
+)
+
 type state int
 
 const (
@@ -17,6 +21,7 @@ type Model struct {
 	TickAccumulator int
 	Moves		int
 	BestMoves	int
+	SolveDuration	time.Duration
 }
 
 // NewModel - Creates a model

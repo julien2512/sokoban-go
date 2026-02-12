@@ -356,7 +356,7 @@ func (b *Board) _CheckEveryBoxIsStuck() bool {
 
 func (b *Board) _CheckEveryBoxIsTrap() bool {
 	traped := false
-	traped = b._CheckEveryBoxIsStuck() || b._CheckEveryBoxIsTrapByWall() || b._CheckEveryBoxIsDead()
+	traped = b._CheckEveryBoxIsStuck() || b._CheckEveryBoxIsTrapByWall() // || b._CheckEveryBoxIsDead() // Note : Stuck includes Dead ones
 	return traped
 }
 
