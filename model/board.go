@@ -289,64 +289,81 @@ func (b *Board) _CheckEveryBoxIsTrapByWall() bool {
 	return count > 0
 }
 
+type CellPile struct  {
+	Cells []*Cell
+}
+
+func NewCellPile() *CellPile {
+	return &CellPile{ Cells : make([]*Cell,0) }
+}
+
+func (c *CellPile) Push(cell *Cell) {
+	c.Cells = append(c.Cells, cell)
+}
+
+func (c *CellPile) Pop() *Cell {
+	if len(c.Cells) == 0 { return nil }
+	cell := c.Cells[0]
+	c.Cells = c.Cells[1:len(c.Cells)]
+	return cell
+}
+
 // assume x,y is a box
-func (b *Board) _CheckOneBoxIsStuck(x,y int, stuckCells map[*Cell]bool, freeCells map[*Cell]bool) bool {
-	cell := b.Get(x,y)
-	if freeCells[cell] {
-		return false
-	}
-	if stuckCells[cell] {
-		return true
-	}
-
-
+func (b *Board) _CheckOneBoxIsStuck(x,y int, freeCells map[*Cell]bool) bool {
 	cellup := b.Get(x,y-1)
 	celldown := b.Get(x,y+1)
 	cellleft := b.Get(x-1,y)
 	cellright := b.Get(x+1,y)
-	stuckup := cellup.TypeOf == CellTypeWall
-	stuckdown := celldown.TypeOf == CellTypeWall
-	stuckleft := cellleft.TypeOf == CellTypeWall
-	stuckright := cellright.TypeOf == CellTypeWall
-	
-	if cellup.HasBox { stuckup = true
-	} else { cellup = nil }
-	if celldown.HasBox { stuckdown = true
-	} else { celldown = nil }
-	if cellleft.HasBox { stuckleft = true
-	} else { cellleft = nil }
-	if cellright.HasBox { stuckright = true
-	} else { cellright = nil }
+	stuckup := cellup.TypeOf == CellTypeWall || (cellup.HasBox && !freeCells[cellup])
+	stuckdown := celldown.TypeOf == CellTypeWall || (celldown.HasBox && !freeCells[celldown])
+	stuckleft := cellleft.TypeOf == CellTypeWall || (cellleft.HasBox && !freeCells[cellleft])
+	stuckright := cellright.TypeOf == CellTypeWall || (cellright.HasBox && !freeCells[cellright])
 	
 	if (!stuckup && !stuckdown) || (!stuckleft && !stuckright) {
-		freeCells[cell] = true
 		return false
-	} else {
-		stuckCells[cell] = true
-
-		if stuckup && cellup != nil { stuckup = b._CheckOneBoxIsStuck(x,y-1,stuckCells, freeCells) }
-		if stuckdown && celldown != nil { stuckdown = b._CheckOneBoxIsStuck(x,y+1,stuckCells, freeCells) }
-		if stuckleft && cellleft != nil { stuckleft = b._CheckOneBoxIsStuck(x-1,y,stuckCells, freeCells) }
-		if stuckright && cellright != nil { stuckright = b._CheckOneBoxIsStuck(x+1,y,stuckCells, freeCells) }
-		
-		if (!stuckup && !stuckdown) || (!stuckleft && !stuckright) {
-			delete(stuckCells, cell)
-			freeCells[cell] = true
-			return false
-		}
-		return true
 	}
+	return true
 }
 
 func (b *Board) _CheckEveryBoxIsStuck() bool {
-	stuckCells := make(map[*Cell]bool)
-	freeCells := make(map[*Cell]bool)
+	pile := NewCellPile()
+	free := make(map[*Cell]bool)
+
+	// pile everybox
+	for i :=0;i<len(b.Boxes);i++ {
+		box := &b.Boxes[i]
+		cell := b.Get(box.X,box.Y)
+		pile.Push(cell)
+	}
 	
+	// check every box as it is not free
+	for {
+		nextPile := NewCellPile()
+		pilecount := len(pile.Cells)
+
+		// check every box
+		for current := pile.Pop(); current!=nil; current=pile.Pop() {
+			box := &b.Boxes[current.Box]
+			x := box.X
+			y := box.Y
+
+			if !b._CheckOneBoxIsStuck(x,y,free) {
+				free[current] = true
+			} else {
+				nextPile.Push(current)
+			}
+		}
+		if pilecount == len(nextPile.Cells) { break }
+		pile = nextPile
+	}
+
+	// mark every stuck box as dead
 	traped := false
 	for i :=0;i<len(b.Boxes);i++ {
 		box := &b.Boxes[i]
 		cell := b.Get(box.X,box.Y)
-		if b._CheckOneBoxIsStuck(box.X,box.Y,stuckCells,freeCells) && cell.TypeOf != CellTypeGoal {
+
+		if !free[cell] && cell.TypeOf != CellTypeGoal {
 			box.IsDead = true
 			traped = true
 		}
