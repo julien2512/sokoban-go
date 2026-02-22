@@ -17,6 +17,7 @@ type Cell struct {
 	TypeOf cellType
 	HasBox bool
 	IsFree bool
+	IsPath bool
 	Box int
 	Dist map[Position]int
 }
@@ -541,8 +542,6 @@ func (b *Board) CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {
 	X := b.Player.X
 	Y := b.Player.Y
 	Pos := Position{X:X,Y:Y}
-	//fmt.Println("-----")
-	//b.Print()
 	if b.BestPositions[Pos] == nil {
 		b.BestPositions[Pos] = &BestPosition{BestLength:1000,BestX:-1,BestY:-1}
 	} else {
@@ -553,6 +552,7 @@ func (b *Board) CheckEveryBoxMoveFromPlayer(boards map[string]*Board) {
 	b._CheckEveryBoxMoveFromPlayer(boards)
 	b.Player = NewPlayer(X,Y)
 	b.CheckEveryDist(X,Y)
+	b.FindBestPath()
 }
 
 
@@ -628,6 +628,49 @@ func (b *Board) MoveBoxAndCheck(x,y int, dir direction.Direction, boards map[str
 	newboard._CheckEveryBoxMoveFromPlayer(boards)
 
 	return newboard
+}
+
+func (b *Board) ResetPath() {
+	for i :=0;i<len(b.Cells);i++ {
+		b.Cells[i].IsPath = false
+	}
+}
+
+func (b *Board) _FindReverseBestPath(x,y int, p Position, l int) bool {
+	if p.X==x && p.Y==y { return true }
+
+	if b.Get(x,y).IsFree && b.Get(x,y).Dist[p]==l {
+		b.Get(x,y).IsPath = true
+		
+		if b._FindReverseBestPath(x-1,y,p,l-1) { return true }
+		if b._FindReverseBestPath(x+1,y,p,l-1) { return true }
+		if b._FindReverseBestPath(x,y-1,p,l-1) { return true }
+		if b._FindReverseBestPath(x,y+1,p,l-1) { return true }
+	}
+	return false
+}
+
+// assume best move is set up
+func (b *Board) FindBestPath() {
+	b.ResetPath()
+
+	position := Position{X:b.Player.X,Y:b.Player.Y}
+	
+	bestposition := b.GetBestPosition()
+	x := bestposition.BestX
+	y := bestposition.BestY
+
+	if bestposition.BestLength==0 { return }
+
+	switch(bestposition.BestDir) {
+		case direction.L :  x = x+1
+		case direction.R :  x = x-1
+		case direction.U :  y = y+1
+		case direction.D :  y = y-1
+	}
+	l := b.Get(x,y).Dist[position]
+
+	b._FindReverseBestPath(x,y,position,l)
 }
 
 func (b *Board) GetBoxMoveCount() int {

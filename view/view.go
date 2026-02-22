@@ -33,6 +33,8 @@ const (
 	SpriteGoalInFreeSpace
 	SpriteGoalAndPlayerInFreeSpace
 	SpriteFreeSpace
+	SpriteFreeSpaceBestPath
+	SpriteGoalInFreeSpaceBestPath
 	SpriteFree
 	SpriteBoxGoUp
 	SpriteBoxGoDown
@@ -109,6 +111,8 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(48), float64(48), float64(64))), // goal in freespace
 			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(48), float64(80), float64(64))), // goal+player in freespace
 			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(48), float64(32), float64(64))), // freespace
+			pixel.NewSprite(pictureData, pixel.R(float64(80), float64(48), float64(96), float64(64))), // freespace best path
+			pixel.NewSprite(pictureData, pixel.R(float64(96), float64(48), float64(112), float64(64))), // goal in freespace best path
 			pixel.NewSprite(pictureData, pixel.R(float64(48), float64(48), float64(64), float64(64))),  // free
 			pixel.NewSprite(pictureData, pixel.R(float64(32), float64(32), float64(48), float64(48))),  // box go up
 			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(32), float64(32), float64(48))),  // box go down
@@ -205,7 +209,8 @@ func (v *View) drawBoard(showFreeSpace bool) {
 						} else { v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 						if showFreeSpace { v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY) }
 					} else if showFreeSpace && cell.IsFree {
-						v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						if cell.IsPath { v.drawBoardSprite(SpriteFreeSpaceBestPath, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						} else { v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 					} else {
 						v.drawBoardSprite(SpriteFree, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					}
@@ -222,7 +227,8 @@ func (v *View) drawBoard(showFreeSpace bool) {
 						}
 					} else {
 						if showFreeSpace && cell.IsFree {
-							v.drawBoardSprite(SpriteGoalInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+							if cell.IsPath { v.drawBoardSprite(SpriteGoalInFreeSpaceBestPath, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+							} else { v.drawBoardSprite(SpriteGoalInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY)) }
 						} else {
 							v.drawBoardSprite(SpriteGoal, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 						}
