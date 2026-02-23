@@ -145,7 +145,7 @@ func (v *View) Draw(showFreeSpace bool) {
 		v.drawBoard(showFreeSpace)
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 45, 7)
 		v.printString(fmt.Sprintf("Moves %02d / %02d / %02d", v.m.Moves, v.m.BestMoves, v.m.Moves+v.m.Board.GetBestPosition().BestLength), 45, 9)
-		v.printString("---Controls---\n\nCursors:  Move\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 46, 14)
+		v.printString("---Controls---\n\nCursors:  Move\nA:    AutoMove\nF:  Show Hints\nZ:        Undo\nR:       Reset\nEscape:   Quit", 46, 12)
 	case model.StateLevelComplete:
 		v.printString(p.Sprintf("Solve Duration : %02d ns", v.m.SolveDuration),0,0)
 		v.printString(p.Sprintf("Boards : %02d", len(v.m.Boards)),0,1)

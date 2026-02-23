@@ -18,6 +18,7 @@ type Cell struct {
 	HasBox bool
 	IsFree bool
 	IsPath bool
+	PathDir direction.Direction
 	Box int
 	Dist map[Position]int
 }
@@ -636,16 +637,20 @@ func (b *Board) ResetPath() {
 	}
 }
 
-func (b *Board) _FindReverseBestPath(x,y int, p Position, l int) bool {
-	if p.X==x && p.Y==y { return true }
+func (b *Board) _FindReverseBestPath(x,y int, p Position, l int, pathDir direction.Direction) bool {
+	if p.X==x && p.Y==y { 
+		b.Get(x,y).PathDir = pathDir
+		return true 
+	}
 
 	if b.Get(x,y).IsFree && b.Get(x,y).Dist[p]==l {
 		b.Get(x,y).IsPath = true
+		b.Get(x,y).PathDir = pathDir
 		
-		if b._FindReverseBestPath(x-1,y,p,l-1) { return true }
-		if b._FindReverseBestPath(x+1,y,p,l-1) { return true }
-		if b._FindReverseBestPath(x,y-1,p,l-1) { return true }
-		if b._FindReverseBestPath(x,y+1,p,l-1) { return true }
+		if b._FindReverseBestPath(x-1,y,p,l-1,direction.R) { return true }
+		if b._FindReverseBestPath(x+1,y,p,l-1,direction.L) { return true }
+		if b._FindReverseBestPath(x,y-1,p,l-1,direction.D) { return true }
+		if b._FindReverseBestPath(x,y+1,p,l-1,direction.U) { return true }
 	}
 	return false
 }
@@ -670,7 +675,7 @@ func (b *Board) FindBestPath() {
 	}
 	l := b.Get(x,y).Dist[position]
 
-	b._FindReverseBestPath(x,y,position,l)
+	b._FindReverseBestPath(x,y,position,l,bestposition.BestDir)
 }
 
 func (b *Board) GetBoxMoveCount() int {

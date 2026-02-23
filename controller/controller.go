@@ -12,6 +12,8 @@ import (
 type Controller struct {
 	m *model.Model
 	ShowFreeSpace bool
+	autoplay bool
+	autoTime *time.Ticker
 }
 
 // NewController - Creates a controller
@@ -48,6 +50,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 			c.tryUndoLastMove()
 		case pixelgl.KeyR:
 			c.restartLevel()
+		case pixelgl.KeyA:
+			c.toggleAutoplay()
 		}
 	case model.StateLevelComplete:
 		if key == pixelgl.KeySpace {
@@ -57,6 +61,38 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 		if key == pixelgl.KeySpace {
 			c.StartNewGame()
 		}
+	}
+}
+
+func (c *Controller) Autoplay() {
+	player := c.m.Board.Player
+	board  := c.m.Board
+	cell := board.Get(player.X,player.Y)
+	pathDir := cell.PathDir
+	
+	if (c.autoplay && c.m.State == model.StatePlaying) {
+		c.tryMovePlayer(pathDir)	
+	}
+}
+
+func (c *Controller) toggleAutoplay() {
+	if (c.autoplay) { 
+		c.autoplay = false
+		c.autoTime.Stop()
+	} else {
+		c.autoplay = true
+		
+		c.autoTime = time.NewTicker(500 * time.Millisecond)
+
+		go func() {
+			for {
+				if (!c.autoplay) { return }
+				select {
+					case <-c.autoTime.C:
+						c.Autoplay()
+				}
+			}
+		}()
 	}
 }
 
@@ -111,11 +147,11 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				c.m.Board = c.m.Board.MoveBoxAndCheck(targetX,targetY,dir,c.m.Boards)
 				c.m.LastMove = model.NewLastMove(lastX,lastY,targetX,targetY,nextX,nextY,c.m.LastMove)
 				fmt.Printf("%v: Player moved (push)\n", dir)
+				c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 				if c.m.Board.IsComplete() {
 					c.m.State = model.StateLevelComplete
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 				}
-				c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 			}
 		} else {
 			c.m.Moves++
@@ -159,12 +195,12 @@ func (c *Controller) loadLevel() {
 	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 	c.m.Boards = make(map[string]*model.Board)
 	c.m.LastMove = nil
-	c.m.State = model.StatePlaying
 	c.m.Moves = 0
 	start := time.Now()		
 	c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 	c.m.SolveDuration = time.Now().Sub(start)
 	c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
+	c.m.State = model.StatePlaying
 }
 
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete
