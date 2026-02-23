@@ -1,6 +1,6 @@
 # Sokoban Go
 
-Classic puzzle game written in golang.
+Classic puzzle game written in golang overriding TheInvader360/sokoban-go. Thanks for your sharing !
 
 ![assets/demo.gif](assets/demo.gif)
 
