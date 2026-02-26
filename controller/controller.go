@@ -70,7 +70,7 @@ func (c *Controller) Autoplay() {
 	cell := board.Get(player.X,player.Y)
 	pathDir := cell.PathDir
 	
-	if (c.autoplay && c.m.State == model.StatePlaying) {
+	if (c.autoplay && c.m.State == model.StatePlaying && pathDir!=direction.None) {
 		c.tryMovePlayer(pathDir)	
 	}
 }

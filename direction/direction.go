@@ -7,6 +7,7 @@ const (
 	D
 	L
 	R
+	None
 )
 
 func (d Direction) String() string {

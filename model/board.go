@@ -53,7 +53,7 @@ func NewBox(x,y int) *Box {
 func getCharFromNum(i int32) string {
 	return string(65+i)
 }
-
+ 
 func getCellString(c Cell) string {
 	var i int32
 	if c.TypeOf == CellTypeNone { i = 0 
@@ -634,6 +634,7 @@ func (b *Board) MoveBoxAndCheck(x,y int, dir direction.Direction, boards map[str
 func (b *Board) ResetPath() {
 	for i :=0;i<len(b.Cells);i++ {
 		b.Cells[i].IsPath = false
+		b.Cells[i].PathDir = direction.None
 	}
 }
 
@@ -658,6 +659,8 @@ func (b *Board) _FindReverseBestPath(x,y int, p Position, l int, pathDir directi
 // assume best move is set up
 func (b *Board) FindBestPath() {
 	b.ResetPath()
+
+	if b.GetGoodBoxMoveCount() == 0 { return }
 
 	position := Position{X:b.Player.X,Y:b.Player.Y}
 	
