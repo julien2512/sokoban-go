@@ -202,12 +202,7 @@ func (b *Board) _ResetCanBoxMove() {
 }
 
 func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
-	c := b.Get(x,y)
-
-	if !c.HasBox || c.TypeOf == CellTypeGoal {
-		return false
-	}
-	box := &b.Boxes[c.Box]
+	box := &b.Boxes[b.Get(x,y).Box]
 	cup := b.Get(x,y-1)
 	cdown := b.Get(x,y+1)
 	cleft := b.Get(x-1,y)
@@ -223,11 +218,13 @@ func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
 
 func (b *Board) _CheckEveryBoxIsDead() bool {
 	count := 0
-	for i :=0;i<len(b.Cells);i++ {
-		y := i/b.Width
-		x := i%b.Width
+	for i :=0;i<len(b.Boxes);i++ {
+		box := b.Boxes[i]
+		y := box.Y
+		x := box.X
+		c := b.Get(x,y)
 
-		if b._CheckOneBoxIsDead(x,y) { count++ }
+		if c.TypeOf != CellTypeGoal && b._CheckOneBoxIsDead(x,y) { count++ }
 	}
 	return count > 0
 }
@@ -320,8 +317,8 @@ func (b *Board) _CheckOneBoxIsStuck(x,y int, freeCells map[*Cell]bool) bool {
 	stuckdown := celldown.TypeOf == CellTypeWall || (celldown.HasBox && !freeCells[celldown])
 	stuckleft := cellleft.TypeOf == CellTypeWall || (cellleft.HasBox && !freeCells[cellleft])
 	stuckright := cellright.TypeOf == CellTypeWall || (cellright.HasBox && !freeCells[cellright])
-	
-	if (!stuckup && !stuckdown) || (!stuckleft && !stuckright) {
+
+	if b.Get(x,y).HasBox && ((!stuckup && !stuckdown) || (!stuckleft && !stuckright)) {
 		return false
 	}
 	return true
@@ -331,11 +328,10 @@ func (b *Board) _CheckEveryBoxIsStuck() bool {
 	pile := NewCellPile()
 	free := make(map[*Cell]bool)
 
-	// pile everybox
+	// pile cells
 	for i :=0;i<len(b.Boxes);i++ {
-		box := &b.Boxes[i]
-		cell := b.Get(box.X,box.Y)
-		pile.Push(cell)
+		c := b.Get(b.Boxes[i].X,b.Boxes[i].Y)
+		pile.Push(c)
 	}
 	
 	// check every box as it is not free

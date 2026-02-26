@@ -185,9 +185,7 @@ func (c *Controller) tryUndoLastMove() {
 	c.m.LastMove = c.m.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")
 
-	if (c.ShowFreeSpace) {
-			c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
-	}
+	c.m.Board.CheckEveryBoxMoveFromPlayer(c.m.Boards)
 }
 
 func (c *Controller) loadLevel() {
