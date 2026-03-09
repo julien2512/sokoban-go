@@ -409,6 +409,7 @@ func (b *Board) _CheckOneBoxMoveInDir(x,y, fromx,fromy int, box *Box, from, to P
 			}
 		}
 	} else if !box.XYChecked[from] && box.CanMove[dir] && !box.ShallNotMove[dir] {
+		box.XYChecked[from] = true
 		newBoard:= b.GetOldMoveBox(x,y,dir,boards)
 		b.CheckEveryDist(fromx,fromy)
 		if newBoard!= nil && newBoard.BestPositions[to].BestLength+1+cup.Dist[from]<b.BestPositions[from].BestLength {

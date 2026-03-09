@@ -189,6 +189,8 @@ func (c *Controller) tryUndoLastMove() {
 }
 
 func (c *Controller) loadLevel() {
+	autoplay := c.autoplay
+	if c.autoplay { c.toggleAutoplay() }
 	l := c.m.LM.GetCurrentLevel()
 	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 	c.m.Boards = make(map[string]*model.Board)
@@ -199,6 +201,7 @@ func (c *Controller) loadLevel() {
 	c.m.SolveDuration = time.Now().Sub(start)
 	c.m.BestMoves = c.m.Board.GetBestPosition().BestLength
 	c.m.State = model.StatePlaying
+	if autoplay { c.toggleAutoplay() }
 }
 
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete

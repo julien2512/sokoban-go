@@ -10,7 +10,6 @@ const (
 	StatePlaying state = iota
 	StateLevelComplete
 	StateGameComplete
-	StateAutoplay
 )
 
 type Model struct {
