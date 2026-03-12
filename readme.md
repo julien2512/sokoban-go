@@ -21,6 +21,8 @@ cd sokoban-go
 go run main.go
 ```
 
+Note : you may need a cpp compiler and associated go flags
+
 ## Extra Features from original fork
 
 1. undo feature
