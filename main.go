@@ -67,6 +67,11 @@ func run() {
 				c.HandleInput(pixelgl.KeyZ)
 			}
 			lastKey = pixelgl.KeyZ
+		} else if win.Pressed(pixelgl.KeyTab) {
+			if lastKey != pixelgl.KeyTab {
+				c.HandleInput(pixelgl.KeyTab)
+			}
+			lastKey = pixelgl.KeyTab
 		} else if win.Typed() == "r" {
 			if lastKey != pixelgl.KeyR {
 				c.HandleInput(pixelgl.KeyR)

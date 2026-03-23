@@ -79,7 +79,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"  ###   " +
 					"  #.#   " +
 					"  # ####" +
-					"###$ $.#" +
+					"###$@$.#" +
 					"#. $@###" +
 					"####$#  " +
 					"   #.#  " +
@@ -96,7 +96,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"# $$# #.#" +
 					"### ###.#" +
 					" ##    .#" +
-					" #   #  #" +
+					" # @ #  #" +
 					" #   ####" +
 					" #####   ",
 			},
@@ -110,7 +110,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"# @$# " +
 					"##$ ##" +
 					"## $ #" +
-					"#.$  #" +
+					"#.$ @#" +
 					"#..*.#" +
 					"######",
 			},
@@ -124,7 +124,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					" # $  # " +
 					"### # ##" +
 					"#.# #  #" +
-					"#.$  # #" +
+					"#.$@ # #" +
 					"#.   $ #" +
 					"########",
 			},
@@ -138,7 +138,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"###$$$ #" +
 					"#@ $.. #" +
 					"# $...##" +
-					"####  # " +
+					"####@ # " +
 					"   #### ",
 			},
 			{
@@ -151,7 +151,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"#  $. ##" +
 					"#  .$. #" +
 					"### *$ #" +
-					"  #   ##" +
+					"  #@  ##" +
 					"  ##### ",
 			},
 			{
@@ -164,7 +164,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					" ## .## " +
 					" #  $.# " +
 					"## $  ##" +
-					"#  #$$ #" +
+					"#@ #$$ #" +
 					"#  @   #" +
 					"########",
 			},
@@ -178,7 +178,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"#@$..$ #" +
 					"# $.* ##" +
 					"# $..$ #" +
-					"#  #   #" +
+					"#  #  @#" +
 					"########",
 			},
 			{
@@ -191,7 +191,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"# $$$##  " +
 					"#  #..###" +
 					"##  ..$ #" +
-					" # @    #" +
+					" # @   @#" +
 					" ########",
 			},
 			{
@@ -205,7 +205,7 @@ func NewLevelManager(testMode bool) *LevelManager {
 					"# $$$ #" +
 					"#  $  #" +
 					"# $$$ #" +
-					"#  #@ #" +
+					"#@ #@ #" +
 					"#######",
 			},
 			/*

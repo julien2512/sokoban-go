@@ -40,6 +40,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 			c.tryMovePlayer(direction.L)
 		case pixelgl.KeyRight:
 			c.tryMovePlayer(direction.R)
+		case pixelgl.KeyTab:
+			c.trySwitchPlayer()
 		case pixelgl.KeyZ:
 			c.tryUndoLastMove()
 		case pixelgl.KeyR:
@@ -58,8 +60,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 
 // tryMovePlayer - Move player (and an adjacent box where appropriate) in the specified direction if possible. Check for board completion (and handle appropriately) if a box is moved
 func (c *Controller) tryMovePlayer(dir direction.Direction) {
-	lastX := c.m.Board.Player.X
-	lastY := c.m.Board.Player.Y
+	lastX := c.m.Board.Players[c.m.Board.ActivePlayer].X
+	lastY := c.m.Board.Players[c.m.Board.ActivePlayer].Y
 	targetX := lastX
 	targetY := lastY
 	nextX := targetX
@@ -81,34 +83,46 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 	}
 
 	targetCell := c.m.Board.Get(targetX, targetY)
+	TargetHasPlayer,_ := c.m.Board.CheckPlayer(targetX,targetY)
 
 	if targetCell.TypeOf == model.CellTypeWall {
 		fmt.Printf("%v: Player blocked (wall)\n", dir)
-	} else {
-		if targetCell.HasBox {
-			nextCell := c.m.Board.Get(nextX, nextY)
-			if nextCell.TypeOf == model.CellTypeWall {
-				fmt.Printf("%v: Box blocked (wall)\n", dir)
-			} else if nextCell.HasBox {
-				fmt.Printf("%v: Box blocked (box)\n", dir)
-			} else {
-				c.m.Board.LastMove = model.NewLastMove(lastX,lastY,targetCell,nextCell,c.m.Board.LastMove)
-				targetCell.HasBox = false
-				nextCell.HasBox = true
-				c.m.Board.Player.X = targetX
-				c.m.Board.Player.Y = targetY
-				fmt.Printf("%v: Player moved (push)\n", dir)
-				if c.m.Board.IsComplete() {
-					c.m.State = model.StateLevelComplete
-					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
-				}
-			}
+	} else if TargetHasPlayer {
+		fmt.Printf("%v: Player blocked (player)\n", dir)
+	} else if targetCell.HasBox {
+		nextCell := c.m.Board.Get(nextX, nextY)
+		NextHasPlayer,_ := c.m.Board.CheckPlayer(nextX,nextY)
+		if nextCell.TypeOf == model.CellTypeWall {
+			fmt.Printf("%v: Box blocked (wall)\n", dir)
+		} else if nextCell.HasBox {
+			fmt.Printf("%v: Box blocked (box)\n", dir)
+		} else if NextHasPlayer {
+			fmt.Printf("%v: Box blocked (player)\n", dir)
 		} else {
-			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,nil,nil,c.m.Board.LastMove)
-			c.m.Board.Player.X = targetX
-			c.m.Board.Player.Y = targetY
-			fmt.Printf("%v: Player moved (clear)\n", dir)
+			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,targetCell,nextCell,c.m.Board.ActivePlayer,c.m.Board.LastMove)
+			targetCell.HasBox = false
+			nextCell.HasBox = true
+			c.m.Board.Players[c.m.Board.ActivePlayer].X = targetX
+			c.m.Board.Players[c.m.Board.ActivePlayer].Y = targetY
+			fmt.Printf("%v: Player moved (push)\n", dir)
+			if c.m.Board.IsComplete() {
+				c.m.State = model.StateLevelComplete
+				fmt.Print("*** Level complete! ***\n(space key to continue)\n")
+			}
 		}
+	} else {
+			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,nil,nil,c.m.Board.ActivePlayer,c.m.Board.LastMove)
+			c.m.Board.Players[c.m.Board.ActivePlayer].X = targetX
+			c.m.Board.Players[c.m.Board.ActivePlayer].Y = targetY
+			fmt.Printf("%v: Player moved (clear)\n", dir)
+	}
+}
+
+func (c *Controller) trySwitchPlayer() {
+	if c.m.Board.ActivePlayer+1 == len(c.m.Board.Players) {
+		c.m.Board.ActivePlayer = 0
+	} else {
+		c.m.Board.ActivePlayer++
 	}
 }
 
@@ -116,8 +130,9 @@ func (c *Controller) tryUndoLastMove() {
 	if c.m.Board.LastMove == nil {
 		return
 	}
-	c.m.Board.Player.X = c.m.Board.LastMove.LastX
-	c.m.Board.Player.Y = c.m.Board.LastMove.LastY
+	c.m.Board.Players[c.m.Board.LastMove.LastActivePlayer].X = c.m.Board.LastMove.LastX
+	c.m.Board.Players[c.m.Board.LastMove.LastActivePlayer].Y = c.m.Board.LastMove.LastY
+	c.m.Board.ActivePlayer = c.m.Board.LastMove.LastActivePlayer
 	if c.m.Board.LastMove.LastTargetCell != nil {
 		c.m.Board.LastMove.LastTargetCell.HasBox = true
 		c.m.Board.LastMove.LastNextCell.HasBox = false

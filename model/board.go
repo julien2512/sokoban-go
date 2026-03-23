@@ -17,7 +17,8 @@ type Board struct {
 	Width, Height int
 	Cells         []Cell
 	LastMove      *LastMove
-	Player        *Player
+	Players        []*Player
+	ActivePlayer	int
 }
 
 // NewBoard - Creates a board (map data encoding: Player "@", Box "$", Goal ".", Wall "#", Goal+Player "+", Goal+Box "*")
@@ -35,7 +36,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 			cell := Cell{}
 			switch code {
 			case "@":
-				b.Player = NewPlayer(x, y)
+				b.Players = append(b.Players,NewPlayer(x,y))
 			case "$":
 				cell.HasBox = true
 			case ".":
@@ -44,7 +45,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 				cell.TypeOf = CellTypeWall
 			case "+":
 				cell.TypeOf = CellTypeGoal
-				b.Player = NewPlayer(x, y)
+				b.Players = append(b.Players,NewPlayer(x,y))
 			case "*":
 				cell.TypeOf = CellTypeGoal
 				cell.HasBox = true
@@ -54,6 +55,13 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 	}
 
 	return &b
+}
+
+func (b *Board) CheckPlayer(x,y int) (bool,int) {
+	for i, Player := range b.Players {
+		if Player.X == x && Player.Y == y { return true,i }
+	}
+	return false,-1
 }
 
 // Get - Returns the cell at the given location
