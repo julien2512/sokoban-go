@@ -6,6 +6,7 @@ const (
 	StatePlaying state = iota
 	StateLevelComplete
 	StateGameComplete
+	StateRewind
 )
 
 type Model struct {

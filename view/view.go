@@ -27,6 +27,7 @@ const (
 	SpriteLogo
 	SpriteActivePlayer
 	SpriteGoalAndActivePlayer
+	SpriteRewind
 )
 
 type View struct {
@@ -87,6 +88,7 @@ func NewView(m *model.Model, win *opengl.Window, scaleFactor float64) *View {
 			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(32), float64(112), float64(80))), // logo
 			pixel.NewSprite(pictureData, pixel.R(float64(0), float64(0), float64(16), float64(16))),   // active player
 			pixel.NewSprite(pictureData, pixel.R(float64(64), float64(0), float64(80), float64(16))),  // goal+active player
+			pixel.NewSprite(pictureData, pixel.R(float64(16), float64(0), float64(32), float64(16))),   // rewind
 		},
 	}
 
@@ -103,7 +105,7 @@ func (v *View) Draw() {
 	case model.StatePlaying:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString("---Controls---\n\nCursors:  Move\nTab:    Switch\nZ:        Undo\nR:       Reset\nEscape:   Quit", 48, 13)
+		v.printString("---Controls---\n\nCursors:  Move\nTab:    Switch\nZ:        Undo\nR:      Rewind\nEscape:   Quit", 48, 13)
 	case model.StateLevelComplete:
 		v.drawBoard()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
@@ -125,6 +127,12 @@ func (v *View) Draw() {
 			}
 		}
 		v.printString("---Controls---\n\nSpace: Restart\n              \nEscape:   Quit", 48, 15)
+
+	case model.StateRewind:
+		v.drawBoard()
+		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
+		v.printString("---Controls---\n\nCursors:  Move\nTab:    Switch\nZ:        Undo\nR:      Rewind\nEscape:   Quit", 48, 13)
+		v.drawRewind()
 	}
 
 	v.win.Update()
@@ -142,6 +150,15 @@ func (v *View) drawPlayers() {
 				v.drawBoardSprite(SpritePlayer, float64(Player.X), float64(Player.Y), float64(boardOffsetX), float64(boardOffsetY))
 			}
 		}
+	}
+}
+
+func (v *View) drawRewind() {
+	boardOffsetX := ((22 - v.m.Board.Width) / 2) + 1
+	boardOffsetY := ((14 - v.m.Board.Height) / 2) + 1
+
+	if v.m.TickAccumulator>10 {
+		v.drawBoardSprite(SpriteRewind, float64(v.m.Board.Width-1)/2, float64(v.m.Board.Height-1)/2 , float64(boardOffsetX), float64(boardOffsetY))
 	}
 }
 

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	pixelgl "github.com/gopxl/pixel/v2"
 	"github.com/TheInvader360/sokoban-go/direction"
@@ -10,6 +11,7 @@ import (
 
 type Controller struct {
 	m *model.Model
+	rewind *time.Ticker
 }
 
 // NewController - Creates a controller
@@ -30,6 +32,11 @@ func (c *Controller) StartNewGame() {
 // HandleInput - Handles user input as appropriate (game state dependent behaviour)
 func (c *Controller) HandleInput(key pixelgl.Button) {
 	switch c.m.State {
+	case model.StateRewind:
+		switch key {
+		case pixelgl.KeyR:
+			c.toggleRewind()
+		}
 	case model.StatePlaying:
 		switch key {
 		case pixelgl.KeyUp:
@@ -45,7 +52,7 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 		case pixelgl.KeyZ:
 			c.tryUndoLastMove()
 		case pixelgl.KeyR:
-			c.restartLevel()
+			c.toggleRewind()
 		}
 	case model.StateLevelComplete:
 		if key == pixelgl.KeySpace {
@@ -57,6 +64,39 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 		}
 	}
 }
+
+
+func (c *Controller) Rewind() {
+	if (c.m.State == model.StateRewind) {
+		if c.m.Board.LastMove == nil {
+			c.toggleRewind()
+		} else {
+			c.tryUndoLastMove()
+		}
+	}
+}
+
+func (c *Controller) toggleRewind() {
+	if (c.m.State == model.StateRewind) { 
+		c.m.State = model.StatePlaying
+		c.rewind.Stop()
+	} else {
+		c.m.State = model.StateRewind
+		
+		c.rewind = time.NewTicker(350 * time.Millisecond)
+
+		go func() {
+			for {
+				if (c.m.State != model.StateRewind) { return }
+				select {
+					case <-c.rewind.C:
+						c.Rewind()
+				}
+			}
+		}()
+	}
+}
+
 
 // tryMovePlayer - Move player (and an adjacent box where appropriate) in the specified direction if possible. Check for board completion (and handle appropriately) if a box is moved
 func (c *Controller) tryMovePlayer(dir direction.Direction) {
