@@ -8,17 +8,25 @@ const (
 	StateGameComplete
 )
 
+const (
+	LayerPlay = iota
+	LayerBox
+)
+
 type Model struct {
 	LM              *LevelManager
 	Board           *Board
 	State           state
 	TickAccumulator int
+	Layer           int
+	BoxLayer	int
 }
 
 // NewModel - Creates a model
 func NewModel() *Model {
 	m := Model{
 		LM: NewLevelManager(false),
+		Layer: LayerPlay,
 	}
 
 	return &m

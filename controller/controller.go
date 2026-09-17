@@ -44,6 +44,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 			c.tryUndoLastMove()
 		case pixelgl.KeyR:
 			c.restartLevel()
+		case pixelgl.KeyTab:
+			c.switchLayer()
 		}
 	case model.StateLevelComplete:
 		if key == pixelgl.KeySpace {
@@ -52,6 +54,19 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 	case model.StateGameComplete:
 		if key == pixelgl.KeySpace {
 			c.StartNewGame()
+		}
+	}
+}
+
+func (c *Controller) switchLayer() {
+	if c.m.Layer == model.LayerPlay {
+		c.m.Layer = model.LayerBox
+		c.m.BoxLayer = 0
+	} else {
+		if c.m.BoxLayer < len(c.m.Board.Boxes)-1 {
+			c.m.BoxLayer++ 
+		} else {
+			c.m.Layer = model.LayerPlay
 		}
 	}
 }
