@@ -15,6 +15,7 @@ type Cell struct {
 
 type Board struct {
 	Width, Height int
+	Boxes int
 	Cells         []Cell
 	LastMove      *LastMove
 	Player        *Player
@@ -26,6 +27,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 
 	b.Width = boardWidth
 	b.Height = boardHeight
+	b.Boxes = 0
 
 	b.Cells = make([]Cell, b.Width*b.Height)
 
@@ -38,6 +40,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 				b.Player = NewPlayer(x, y)
 			case "$":
 				cell.HasBox = true
+				b.Boxes = b.Boxes + 1
 			case ".":
 				cell.TypeOf = CellTypeGoal
 			case "#":
@@ -48,6 +51,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 			case "*":
 				cell.TypeOf = CellTypeGoal
 				cell.HasBox = true
+				b.Boxes = b.Boxes + 1
 			}
 			b.Cells[(y*b.Width)+x] = cell
 		}
