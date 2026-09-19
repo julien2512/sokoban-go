@@ -100,6 +100,7 @@ func (v *View) Draw() {
 		v.drawBoardLayer()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
 		v.printString(fmt.Sprintf("Boxes : %02d",len(v.m.Board.Boxes)),48,8)
+		v.printString(fmt.Sprintf("MeanMoves : %02d",v.m.Board.MaxMoves),48,9)
 		v.printString("---Controls---\n\nCursors:  Move\nZ:        Undo\nR:       Reset\nTab: SwitchLayer\nEscape:   Quit", 48, 14)
 	case model.StateLevelComplete:
 		v.drawBoardLayer()
@@ -127,20 +128,23 @@ func (v *View) Draw() {
 	v.win.Update()
 }
 
-func (v *View) drawBoardDistances(box int) {
+func (v *View) drawBoardDistances(goal int) {
 		boardOffsetX := ((22 - v.m.Board.Width) / 2) + 1 
 		boardOffsetY := ((14 - v.m.Board.Height) / 2) + 1 
+
+		bestBox := v.m.Board.BestBoxes[goal]	
+
 		for y := 0; y < v.m.Board.Height; y++ {
 			for x := 0; x < v.m.Board.Width; x++ {
 				cell := v.m.Board.Get(x, y)
-				distance := v.m.Board.Distances[box][y*v.m.Board.Width+x]
+				distance := v.m.Board.Distances[goal][y*v.m.Board.Width+x]
 
 				switch cell.TypeOf {
 				case model.CellTypeWall:
 					v.drawBoardSprite(SpriteWall, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 				default:
-					if distance>1 {
-						v.drawTextSprite(distance-1,float64(x),float64(y),float64(boardOffsetX),float64(boardOffsetY)) }
+					if distance>0 {
+						v.drawTextSprite(distance-1,float64(x),float64(y),float64(boardOffsetX),float64(boardOffsetY),cell.HasBox, cell.HasBox && cell.Box == bestBox) }
 				}
 			}
 		}
@@ -194,9 +198,12 @@ func (v *View) drawBoardSprite(s spriteIndex, x, y, offsetX, offsetY float64) {
 	v.sprites[s].Draw(v.win, pixel.IM.ScaledXY(pixel.ZV, pixel.V(r.W()/v.sprites[s].Frame().W(), r.H()/v.sprites[s].Frame().H())).Moved(r.Center()))
 }
 
-func (v *View) drawTextSprite(distance int, x, y, offsetX, offsetY float64) {
+func (v *View) drawTextSprite(distance int, x, y, offsetX, offsetY float64, box bool, bestbox bool) {
 	r := pixel.R((offsetX+x)*16*v.scaleFactor-25, -19+v.win.Bounds().H()-(offsetY+y+1)*16*v.scaleFactor, (offsetX+x+1)*16*v.scaleFactor-25, -19+v.win.Bounds().H()-(offsetY+y)*16*v.scaleFactor)
 	v.text.Clear()
+	if bestbox { v.text.Color = colornames.Red
+	} else if box { v.text.Color = colornames.Yellow
+	} else { v.text.Color = colornames.White }
 	v.text.WriteString(fmt.Sprintf("%d",distance))
 	v.text.Draw(v.win, pixel.IM.ScaledXY(pixel.ZV, pixel.V(r.W()/v.text.Bounds().W(), r.H()/v.text.Bounds().H())).Moved(r.Center()))
 }
@@ -204,6 +211,7 @@ func (v *View) drawTextSprite(distance int, x, y, offsetX, offsetY float64) {
 // printString - prints the given string at screen position x,y (i.e. 0-63,0-22)
 func (v *View) printString(s string, x, y int) {
 	v.text.Clear()
+	v.text.Color = colornames.White
 	v.text.WriteString(s)
 	v.text.Draw(v.win, pixel.IM.Moved(pixel.V(float64(x*8)*v.scaleFactor, (245-float64(y*11))*v.scaleFactor)))
 }

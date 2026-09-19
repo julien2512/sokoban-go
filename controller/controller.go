@@ -108,11 +108,14 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				fmt.Printf("%v: Box blocked (box)\n", dir)
 			} else {
 				c.m.Board.LastMove = model.NewLastMove(lastX,lastY,targetCell,nextCell,c.m.Board.LastMove)
+				nextCell.Box = targetCell.Box // works because we can't push 2 boxes at the same time
+				c.m.Board.Boxes[nextCell.Box] = nextY*c.m.Board.Width+nextX
 				targetCell.HasBox = false
 				nextCell.HasBox = true
 				c.m.Board.Player.X = targetX
 				c.m.Board.Player.Y = targetY
 				fmt.Printf("%v: Player moved (push)\n", dir)
+				c.m.Board.Update()
 				if c.m.Board.IsComplete() {
 					c.m.State = model.StateLevelComplete
 					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
@@ -123,6 +126,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			c.m.Board.Player.X = targetX
 			c.m.Board.Player.Y = targetY
 			fmt.Printf("%v: Player moved (clear)\n", dir)
+			c.m.Board.Update()
 		}
 	}
 }
@@ -136,9 +140,12 @@ func (c *Controller) tryUndoLastMove() {
 	if c.m.Board.LastMove.LastTargetCell != nil {
 		c.m.Board.LastMove.LastTargetCell.HasBox = true
 		c.m.Board.LastMove.LastNextCell.HasBox = false
+		c.m.Board.LastMove.LastTargetCell.Box = c.m.Board.LastMove.LastNextCell.Box
+		c.m.Board.Boxes[c.m.Board.LastMove.LastTargetCell.Box] = c.m.Board.LastMove.LastTargetCell.Y*c.m.Board.Width+c.m.Board.LastMove.LastTargetCell.X
 	}
 	c.m.Board.LastMove = c.m.Board.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")
+	c.m.Board.Update()
 }
 
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete
@@ -149,6 +156,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 		c.m.State = model.StatePlaying
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
+		c.m.Board.Update()
 	} else {
 		c.m.State = model.StateGameComplete
 		fmt.Print("*** GAME COMPLETE! ***\n(space key to restart)\n")
@@ -161,4 +169,5 @@ func (c *Controller) restartLevel() {
 	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
 	c.m.State = model.StatePlaying
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
+	c.m.Board.Update()
 }
