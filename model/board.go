@@ -13,6 +13,11 @@ type Cell struct {
 	TypeOf cellType
 	HasBox bool
 	Box    int
+	IsFree bool
+	CanMoveLeft bool
+	CanMoveRight bool
+	CanMoveUp bool
+	CanMoveDown bool
 }
 
 type Board struct {
@@ -22,6 +27,8 @@ type Board struct {
 	Goals []int
 	Distances [][]int
 	MaxMoves int
+	FreeCells []int
+
 	Cells         []Cell
 	LastMove      *LastMove
 	Player        *Player
@@ -157,7 +164,47 @@ func (b *Board) GetSumOfBestBoxDistances() int {
 	return sum
 }
 
+func (b *Board) ResetFreeCells() {
+	if len(b.FreeCells)>0 {
+		for i:=0;i<len(b.FreeCells);i++ {
+			b.Cells[b.FreeCells[i]].IsFree = false
+		}
+		b.FreeCells = []int{}
+	}
+}
+
+func (b *Board) ResetCanMove() {
+	for i:=0;i<len(b.Boxes);i++ {
+		b.Cells[b.Boxes[i]].CanMoveLeft = false
+		b.Cells[b.Boxes[i]].CanMoveRight = false
+		b.Cells[b.Boxes[i]].CanMoveUp = false
+		b.Cells[b.Boxes[i]].CanMoveDown = false
+	}
+}
+
+func (b *Board) FindFreeCellsFrom(x,y int) {
+	index := y*b.Width + x
+	c := &b.Cells[index]
+	if c.IsFree || c.TypeOf == CellTypeWall { return }
+	if c.HasBox { return }
+
+	c.IsFree = true
+	b.FreeCells = append(b.FreeCells,index)
+	b.FindFreeCellsFrom(x+1,y)
+	b.FindFreeCellsFrom(x-1,y)
+	b.FindFreeCellsFrom(x,y+1)
+	b.FindFreeCellsFrom(x,y-1)
+}
+
+func (b *Board) FindFreeCells() {
+	b.FindFreeCellsFrom(b.Player.X,b.Player.Y)
+}
+
 func (b *Board) Update() {
 	b.BestBoxes = b.GetBestBoxFromDistance()
 	b.MaxMoves = b.GetSumOfBestBoxDistances()
+
+	b.ResetFreeCells()
+	b.ResetCanMove()
+	b.FindFreeCells()
 }

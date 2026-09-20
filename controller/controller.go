@@ -62,12 +62,14 @@ func (c *Controller) switchLayer() {
 	if c.m.Layer == model.LayerPlay {
 		c.m.Layer = model.LayerBox
 		c.m.BoxLayer = 0
-	} else {
+	} else if c.m.Layer == model.LayerBox {
 		if c.m.BoxLayer < len(c.m.Board.Boxes)-1 {
 			c.m.BoxLayer++ 
 		} else {
-			c.m.Layer = model.LayerPlay
+			c.m.Layer = model.LayerPath
 		}
+	} else {
+		c.m.Layer = model.LayerPlay
 	}
 }
 

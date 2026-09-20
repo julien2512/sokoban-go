@@ -11,6 +11,7 @@ const (
 const (
 	LayerPlay = iota
 	LayerBox
+	LayerPath
 )
 
 type Model struct {
