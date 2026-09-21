@@ -1,5 +1,9 @@
 package model
 
+import (
+	"github.com/TheInvader360/sokoban-go/direction"
+)
+
 type cellType int
 
 const (
@@ -13,11 +17,9 @@ type Cell struct {
 	TypeOf cellType
 	HasBox bool
 	Box    int
+
 	IsFree bool
-	CanMoveLeft bool
-	CanMoveRight bool
-	CanMoveUp bool
-	CanMoveDown bool
+	CanMove []bool
 }
 
 type Board struct {
@@ -48,7 +50,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 		for x := 0; x < b.Width; x++ {
 			index := (y*b.Width)+x
 			code := string(mapData[index])
-			cell := Cell{}
+			cell := Cell{CanMove:make([]bool,4),X:x,Y:y}
 			switch code {
 			case "@":
 				b.Player = NewPlayer(x, y)
@@ -65,6 +67,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 			case "+":
 				cell.TypeOf = CellTypeGoal
 				b.Player = NewPlayer(x, y)
+				b.Goals = append(b.Goals,index)
 			case "*":
 				cell.TypeOf = CellTypeGoal
 				cell.HasBox = true
@@ -73,7 +76,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 				b.Boxes = append(b.Boxes,index)
 				b.Goals = append(b.Goals,index)
 			}
-			b.Cells[(y*b.Width)+x] = cell
+			b.Cells[index] = cell
 		}
 	}
 
@@ -175,25 +178,46 @@ func (b *Board) ResetFreeCells() {
 
 func (b *Board) ResetCanMove() {
 	for i:=0;i<len(b.Boxes);i++ {
-		b.Cells[b.Boxes[i]].CanMoveLeft = false
-		b.Cells[b.Boxes[i]].CanMoveRight = false
-		b.Cells[b.Boxes[i]].CanMoveUp = false
-		b.Cells[b.Boxes[i]].CanMoveDown = false
+		b.Cells[b.Boxes[i]].CanMove[direction.U] = false
+		b.Cells[b.Boxes[i]].CanMove[direction.D] = false
+		b.Cells[b.Boxes[i]].CanMove[direction.L] = false
+		b.Cells[b.Boxes[i]].CanMove[direction.R] = false
 	}
 }
 
-func (b *Board) FindFreeCellsFrom(x,y int) {
+func (b *Board) GetDirections(dir direction.Direction) (int,int) {
+	switch(dir) {
+		case direction.U : return 0,-1
+		case direction.D : return 0,1
+		case direction.L : return -1,0
+		case direction.R : return 1,0
+	}
+	return 0,0
+}
+
+func (b *Board) CheckIfBoxInDirectionCanMove(x,y int, dir direction.Direction) {
+	dirx,diry := b.GetDirections(dir)
+	box := b.Get(x+dirx,y+diry)
+	nextthebox := b.Get(x+dirx+dirx,y+diry+diry)
+	if nextthebox.TypeOf != CellTypeWall && !nextthebox.HasBox { 
+		box.CanMove[dir] = true
+	}
+}
+
+// true if it finds a box
+func (b *Board) FindFreeCellsFrom(x,y int) bool {
 	index := y*b.Width + x
 	c := &b.Cells[index]
-	if c.IsFree || c.TypeOf == CellTypeWall { return }
-	if c.HasBox { return }
+	if c.IsFree || c.TypeOf == CellTypeWall { return false }
+	if c.HasBox { return true }
 
 	c.IsFree = true
 	b.FreeCells = append(b.FreeCells,index)
-	b.FindFreeCellsFrom(x+1,y)
-	b.FindFreeCellsFrom(x-1,y)
-	b.FindFreeCellsFrom(x,y+1)
-	b.FindFreeCellsFrom(x,y-1)
+	if b.FindFreeCellsFrom(x+1,y) { b.CheckIfBoxInDirectionCanMove(x,y,direction.R) }
+	if b.FindFreeCellsFrom(x-1,y) { b.CheckIfBoxInDirectionCanMove(x,y,direction.L) }
+	if b.FindFreeCellsFrom(x,y+1) { b.CheckIfBoxInDirectionCanMove(x,y,direction.D) }
+	if b.FindFreeCellsFrom(x,y-1) { b.CheckIfBoxInDirectionCanMove(x,y,direction.U) }
+	return false
 }
 
 func (b *Board) FindFreeCells() {

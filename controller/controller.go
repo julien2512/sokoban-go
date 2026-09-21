@@ -116,7 +116,7 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 				nextCell.HasBox = true
 				c.m.Board.Player.X = targetX
 				c.m.Board.Player.Y = targetY
-				fmt.Printf("%v: Player moved (push)\n", dir)
+				fmt.Printf("%v: Player moved to %02d %02d (push)\n", dir,c.m.Board.LastMove.LastTargetCell.X,c.m.Board.LastMove.LastTargetCell.Y)
 				c.m.Board.Update()
 				if c.m.Board.IsComplete() {
 					c.m.State = model.StateLevelComplete
@@ -144,6 +144,7 @@ func (c *Controller) tryUndoLastMove() {
 		c.m.Board.LastMove.LastNextCell.HasBox = false
 		c.m.Board.LastMove.LastTargetCell.Box = c.m.Board.LastMove.LastNextCell.Box
 		c.m.Board.Boxes[c.m.Board.LastMove.LastTargetCell.Box] = c.m.Board.LastMove.LastTargetCell.Y*c.m.Board.Width+c.m.Board.LastMove.LastTargetCell.X
+		fmt.Printf("Move back box to %02d %02d\n",c.m.Board.LastMove.LastTargetCell.X,c.m.Board.LastMove.LastTargetCell.Y)
 	}
 	c.m.Board.LastMove = c.m.Board.LastMove.PreviousMove
 	fmt.Printf("Player undo last moved\n")

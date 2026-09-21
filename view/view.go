@@ -11,6 +11,7 @@ import (
 	"github.com/gopxl/pixel/v2/ext/text"
 	"github.com/gopxl/pixel/v2/backends/opengl"
 	"github.com/TheInvader360/sokoban-go/model"
+	"github.com/TheInvader360/sokoban-go/direction"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/colornames"
 )
@@ -191,6 +192,20 @@ func (v *View) drawBoardDistances(goal int) {
 
 }
 
+func (v *View) drawArrowsDir(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int, dir direction.Direction) {
+	if cell.CanMove[dir] { 
+		v.drawBoardSprite(SpriteBoxGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+	}
+}
+
+func (v *View) drawArrows(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int) {
+	if !cell.HasBox { return }
+	v.drawArrowsDir(cell,x,y,boardOffsetX,boardOffsetY,direction.U)
+	v.drawArrowsDir(cell,x,y,boardOffsetX,boardOffsetY,direction.D)
+	v.drawArrowsDir(cell,x,y,boardOffsetX,boardOffsetY,direction.L)
+	v.drawArrowsDir(cell,x,y,boardOffsetX,boardOffsetY,direction.R)
+}
+
 func (v *View) drawBoardPath() {
 	if v.m.State != model.StateGameComplete {
 		boardOffsetX := ((22 - v.m.Board.Width) / 2) + 1
@@ -202,12 +217,14 @@ func (v *View) drawBoardPath() {
 				case model.CellTypeNone:
 					if cell.HasBox {
 						v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
 					} else if cell.IsFree {
 						v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					}
 				case model.CellTypeGoal:
 					if cell.HasBox {
 						v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
 					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
 						if cell.IsFree {
 							v.drawBoardSprite(SpriteGoalAndPlayerInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
@@ -239,11 +256,11 @@ func (v *View) drawBoard() {
 				cell := v.m.Board.Get(x, y)
 				switch cell.TypeOf {
 				case model.CellTypeNone:
-					if cell.HasBox {
+					if cell.HasBox && v.m.Board.Cells[v.m.Board.Boxes[cell.Box]].HasBox {
 						v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					}
 				case model.CellTypeGoal:
-					if cell.HasBox {
+					if cell.HasBox && v.m.Board.Cells[v.m.Board.Boxes[cell.Box]].HasBox {
 						v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
 						v.drawBoardSprite(SpriteGoalAndPlayer, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
