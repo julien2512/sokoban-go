@@ -75,80 +75,34 @@ func (c *Controller) switchLayer() {
 
 // tryMovePlayer - Move player (and an adjacent box where appropriate) in the specified direction if possible. Check for board completion (and handle appropriately) if a box is moved
 func (c *Controller) tryMovePlayer(dir direction.Direction) {
-	lastX := c.m.Board.Player.X
-	lastY := c.m.Board.Player.Y
-	targetX := lastX
-	targetY := lastY
-	nextX := targetX
-	nextY := targetY
+	_,typ := c.m.Board.MovePlayer(dir,true)
 
-	switch dir {
-	case direction.U:
-		targetY--
-		nextY -= 2
-	case direction.D:
-		targetY++
-		nextY += 2
-	case direction.L:
-		targetX--
-		nextX -= 2
-	case direction.R:
-		targetX++
-		nextX += 2
-	}
-
-	targetCell := c.m.Board.Get(targetX, targetY)
-
-	if targetCell.TypeOf == model.CellTypeWall {
-		fmt.Printf("%v: Player blocked (wall)\n", dir)
-	} else {
-		if targetCell.HasBox {
-			nextCell := c.m.Board.Get(nextX, nextY)
-			if nextCell.TypeOf == model.CellTypeWall {
-				fmt.Printf("%v: Box blocked (wall)\n", dir)
-			} else if nextCell.HasBox {
-				fmt.Printf("%v: Box blocked (box)\n", dir)
-			} else {
-				c.m.Board.LastMove = model.NewLastMove(lastX,lastY,targetCell,nextCell,c.m.Board.LastMove)
-				nextCell.Box = targetCell.Box // works because we can't push 2 boxes at the same time
-				c.m.Board.Boxes[nextCell.Box] = nextY*c.m.Board.Width+nextX
-				targetCell.HasBox = false
-				nextCell.HasBox = true
-				c.m.Board.Player.X = targetX
-				c.m.Board.Player.Y = targetY
-				fmt.Printf("%v: Player moved to %02d %02d (push)\n", dir,c.m.Board.LastMove.LastTargetCell.X,c.m.Board.LastMove.LastTargetCell.Y)
-				c.m.Board.Update()
-				if c.m.Board.IsComplete() {
-					c.m.State = model.StateLevelComplete
-					fmt.Print("*** Level complete! ***\n(space key to continue)\n")
-				}
+	switch(typ) {
+		case model.PlayerBlockedByWall :
+			fmt.Printf("%v: Player blocked (wall)\n", dir)
+		case model.PlayerBlockedByBox :
+			fmt.Printf("%v: Box blocked (box)\n", dir)
+		case model.PlayerMoveAndPush : 
+			fmt.Printf("%v: Player moved to %02d %02d (push)\n", dir,c.m.Board.LastMove.LastTargetCell.X,c.m.Board.LastMove.LastTargetCell.Y)
+			if c.m.Board.IsComplete() {
+				c.m.State = model.StateLevelComplete
+				fmt.Print("*** Level complete! ***\n(space key to continue)\n")
 			}
-		} else {
-			c.m.Board.LastMove = model.NewLastMove(lastX,lastY,nil,nil,c.m.Board.LastMove)
-			c.m.Board.Player.X = targetX
-			c.m.Board.Player.Y = targetY
+		case model.PlayerMove :
 			fmt.Printf("%v: Player moved (clear)\n", dir)
-			c.m.Board.Update()
-		}
 	}
 }
 
 func (c *Controller) tryUndoLastMove() {
-	if c.m.Board.LastMove == nil {
-		return
+	_,ret := c.m.Board.UndoLastMove()
+
+	switch(ret) {
+		case model.NoUndo :
+			return
+		case model.PlayerUndoMove : 
+			fmt.Printf("Move back to %02d %02d\n",c.m.Board.Player.X,c.m.Board.Player.Y)
 	}
-	c.m.Board.Player.X = c.m.Board.LastMove.LastX
-	c.m.Board.Player.Y = c.m.Board.LastMove.LastY
-	if c.m.Board.LastMove.LastTargetCell != nil {
-		c.m.Board.LastMove.LastTargetCell.HasBox = true
-		c.m.Board.LastMove.LastNextCell.HasBox = false
-		c.m.Board.LastMove.LastTargetCell.Box = c.m.Board.LastMove.LastNextCell.Box
-		c.m.Board.Boxes[c.m.Board.LastMove.LastTargetCell.Box] = c.m.Board.LastMove.LastTargetCell.Y*c.m.Board.Width+c.m.Board.LastMove.LastTargetCell.X
-		fmt.Printf("Move back box to %02d %02d\n",c.m.Board.LastMove.LastTargetCell.X,c.m.Board.LastMove.LastTargetCell.Y)
-	}
-	c.m.Board.LastMove = c.m.Board.LastMove.PreviousMove
-	fmt.Printf("Player undo last moved\n")
-	c.m.Board.Update()
+	fmt.Printf("Player undo last move\n")
 }
 
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete

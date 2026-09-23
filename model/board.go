@@ -224,6 +224,98 @@ func (b *Board) FindFreeCells() {
 	b.FindFreeCellsFrom(b.Player.X,b.Player.Y)
 }
 
+type MoveType int
+
+const (
+	PlayerBlockedByWall MoveType = iota
+	PlayerBlockedByBox
+	PlayerMoveAndPush
+	PlayerMove
+)
+
+func (b *Board) MovePlayer(dir direction.Direction, undo bool) (bool, MoveType) {
+	lastX := b.Player.X
+	lastY := b.Player.Y
+	targetX := lastX
+	targetY := lastY
+	nextX := targetX
+	nextY := targetY
+
+	switch dir {
+	case direction.U:
+		targetY--
+		nextY -= 2
+	case direction.D:
+		targetY++
+		nextY += 2
+	case direction.L:
+		targetX--
+		nextX -= 2
+	case direction.R:
+		targetX++
+		nextX += 2
+	}
+
+	targetCell := b.Get(targetX, targetY)
+
+	if targetCell.TypeOf == CellTypeWall {
+		return false,PlayerBlockedByWall
+	} else {
+		if targetCell.HasBox {
+			nextCell := b.Get(nextX, nextY)
+			if nextCell.TypeOf == CellTypeWall {
+				return false,PlayerBlockedByWall
+			} else if nextCell.HasBox {
+				return false,PlayerBlockedByBox
+			} else {
+				nextCell.Box = targetCell.Box // works because we can't push 2 boxes at the same time
+				b.Boxes[nextCell.Box] = nextY*b.Width+nextX
+				targetCell.HasBox = false
+				nextCell.HasBox = true
+				b.Player.X = targetX
+				b.Player.Y = targetY
+				if undo { b.LastMove = NewLastMove(lastX,lastY,targetCell,nextCell,b.LastMove) }
+				b.Update()
+				return true,PlayerMoveAndPush
+			}
+		} else {
+			b.Player.X = targetX
+			b.Player.Y = targetY
+			if undo { b.LastMove = NewLastMove(lastX,lastY,nil,nil,b.LastMove) }
+			b.Update()
+			return true,PlayerMove
+		}
+	}
+
+}
+
+type UndoType int
+
+const (
+	PlayerUndoAndUnpush UndoType = iota
+	PlayerUndoMove
+	NoUndo
+)
+
+func (b *Board) UndoLastMove() (bool,UndoType) {
+	if b.LastMove == nil {
+		return false,NoUndo
+	}
+	b.Player.X = b.LastMove.LastX
+	b.Player.Y = b.LastMove.LastY
+	var ret UndoType
+	if b.LastMove.LastTargetCell != nil {
+		b.LastMove.LastTargetCell.HasBox = true
+		b.LastMove.LastNextCell.HasBox = false
+		b.LastMove.LastTargetCell.Box = b.LastMove.LastNextCell.Box
+		b.Boxes[b.LastMove.LastTargetCell.Box] = b.LastMove.LastTargetCell.Y*b.Width+b.LastMove.LastTargetCell.X
+		ret = PlayerUndoMove
+	} else { ret = PlayerUndoAndUnpush }
+	b.LastMove = b.LastMove.PreviousMove
+	b.Update()
+	return true,ret
+}
+
 func (b *Board) Update() {
 	b.BestBoxes = b.GetBestBoxFromDistance()
 	b.MaxMoves = b.GetSumOfBestBoxDistances()
