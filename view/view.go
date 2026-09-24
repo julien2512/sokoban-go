@@ -216,15 +216,19 @@ func (v *View) drawBoardPath() {
 				switch cell.TypeOf {
 				case model.CellTypeNone:
 					if cell.HasBox {
-						v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
+						if cell.IsDead { v.drawBoardSprite(SpriteBoxRedCross, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						} else { v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						       v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
+						}
 					} else if cell.IsFree {
 						v.drawBoardSprite(SpriteFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					}
 				case model.CellTypeGoal:
 					if cell.HasBox {
-						v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-						v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
+						if cell.IsDead { v.drawBoardSprite(SpriteBoxRedCross, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+						} else { v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+							 v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
+						}
 					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
 						if cell.IsFree {
 							v.drawBoardSprite(SpriteGoalAndPlayerInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))

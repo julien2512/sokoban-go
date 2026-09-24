@@ -19,6 +19,7 @@ type Cell struct {
 	Box    int
 
 	IsFree bool
+	IsDead bool
 	CanMove []bool
 }
 
@@ -93,6 +94,11 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 // Get - Returns the cell at the given location
 func (b *Board) Get(x, y int) *Cell {
 	return &b.Cells[(y*b.Width)+x]
+}
+
+// Get - Returns the cell at the given location
+func (b *Board) GetBox(i int) *Cell {
+	return &b.Cells[b.Boxes[i]]
 }
 
 // IsComplete - Returns true if every goal cell on the board has a box
@@ -316,6 +322,177 @@ func (b *Board) UndoLastMove() (bool,UndoType) {
 	return true,ret
 }
 
+func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
+	box := b.Get(x,y)
+	cup := b.Get(x,y-1)
+	cdown := b.Get(x,y+1)
+	cleft := b.Get(x-1,y)
+	cright := b.Get(x+1,y)
+
+	if cup.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { box.IsDead = true; return true }
+	if cup.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { box.IsDead = true; return true }
+	if cdown.TypeOf == CellTypeWall && cleft.TypeOf == CellTypeWall { box.IsDead = true; return true }
+	if cdown.TypeOf == CellTypeWall && cright.TypeOf == CellTypeWall { box.IsDead = true; return true }
+
+	return false
+}
+
+func (b *Board) _CheckEveryBoxIsDead() bool {
+	count := 0
+	for i :=0;i<len(b.Boxes);i++ {
+		box := b.GetBox(i)
+		y := box.Y
+		x := box.X
+
+		if box.TypeOf != CellTypeGoal && b._CheckOneBoxIsDead(x,y) { count++ }
+	}
+	return count > 0
+}
+
+func (b *Board) _CheckOneBoxIsTrapByDirWall(x,y int, dirx, diry int) bool {
+	c := b.Get(x,y)
+	if !c.HasBox { return false }
+	if c.IsDead { return true }
+	if c.TypeOf == CellTypeGoal { return false }
+	GoalCount := 0
+	BoxCount := 1
+	cUp := b.Get(x+dirx,y+diry)
+	if cUp.TypeOf != CellTypeWall { return false }
+
+	xRight := x-1*diry
+	yRight := y-1*dirx
+	for {
+		cRight := b.Get(xRight,yRight)
+		if cRight.TypeOf == CellTypeWall { break; }
+		if cRight.HasBox { BoxCount++ }
+		if cRight.TypeOf == CellTypeGoal { GoalCount++ }
+
+		cUp = b.Get(xRight+dirx,yRight+diry)
+		if cUp.TypeOf != CellTypeWall { return false }
+		xRight += -1*diry
+		yRight += -1*dirx
+	}
+	xLeft := x+1*diry
+	yLeft := y+1*dirx
+	for {
+		cLeft := b.Get(xLeft,yLeft)
+		if cLeft.TypeOf == CellTypeWall { break; }
+		if cLeft.HasBox { BoxCount++ }
+		if cLeft.TypeOf == CellTypeGoal { GoalCount++ }
+
+		cUp = b.Get(xLeft+dirx,yLeft+diry)
+		if cUp.TypeOf != CellTypeWall { return false }
+		xLeft += 1*diry
+		yLeft += 1*dirx
+	}
+	
+	if BoxCount > GoalCount {
+		c.IsDead = true
+		return true
+	} else { return false }
+}
+
+func (b *Board) _CheckEveryBoxIsTrapByWall() bool {
+	count := 0
+	for i :=0;i<len(b.Boxes);i++ {
+		box := b.GetBox(i)
+		y := box.Y
+		x := box.X
+		
+		if b._CheckOneBoxIsTrapByDirWall(x,y,0,-1) { count++ }
+		if b._CheckOneBoxIsTrapByDirWall(x,y,0,1) { count++ }
+		if b._CheckOneBoxIsTrapByDirWall(x,y,-1,0) { count++ }
+		if b._CheckOneBoxIsTrapByDirWall(x,y,1,0) { count++ }
+	}	
+	return count > 0
+}
+
+type CellPile struct  {
+	Cells []*Cell
+}
+
+func NewCellPile() *CellPile {
+	return &CellPile{ Cells : make([]*Cell,0) }
+}
+
+func (c *CellPile) Push(cell *Cell) {
+	c.Cells = append(c.Cells, cell)
+}
+
+func (c *CellPile) Pop() *Cell {
+	if len(c.Cells) == 0 { return nil }
+	cell := c.Cells[0]
+	c.Cells = c.Cells[1:len(c.Cells)]
+	return cell
+}
+
+// assume x,y is a box
+func (b *Board) _CheckOneBoxIsStuck(x,y int, freeCells map[*Cell]bool) bool {
+	cellup := b.Get(x,y-1)
+	celldown := b.Get(x,y+1)
+	cellleft := b.Get(x-1,y)
+	cellright := b.Get(x+1,y)
+	stuckup := cellup.TypeOf == CellTypeWall || (cellup.HasBox && !freeCells[cellup])
+	stuckdown := celldown.TypeOf == CellTypeWall || (celldown.HasBox && !freeCells[celldown])
+	stuckleft := cellleft.TypeOf == CellTypeWall || (cellleft.HasBox && !freeCells[cellleft])
+	stuckright := cellright.TypeOf == CellTypeWall || (cellright.HasBox && !freeCells[cellright])
+
+	if b.Get(x,y).HasBox && ((!stuckup && !stuckdown) || (!stuckleft && !stuckright)) {
+		return false
+	}
+	return true
+}
+
+func (b *Board) _CheckEveryBoxIsStuck() bool {
+	pile := NewCellPile()
+	free := make(map[*Cell]bool)
+
+	// pile cells
+	for i :=0;i<len(b.Boxes);i++ {
+		c := b.Get(b.GetBox(i).X,b.GetBox(i).Y)
+		pile.Push(c)
+	}
+	
+	// check every box as it is not free
+	for {
+		nextPile := NewCellPile()
+		pilecount := len(pile.Cells)
+
+		// check every box
+		for current := pile.Pop(); current!=nil; current=pile.Pop() {
+			x := current.X
+			y := current.Y
+
+			if !b._CheckOneBoxIsStuck(x,y,free) {
+				free[current] = true
+			} else {
+				nextPile.Push(current)
+			}
+		}
+		if pilecount == len(nextPile.Cells) { break }
+		pile = nextPile
+	}
+
+	// mark every stuck box as dead
+	traped := false
+	for i :=0;i<len(b.Boxes);i++ {
+		cell := b.GetBox(i)
+
+		if !free[cell] && cell.TypeOf != CellTypeGoal {
+			cell.IsDead = true
+			traped = true
+		}
+	}
+	return traped
+}
+
+// Note : b._CheckEveryBoxIsDead() is not used because _CheckEveryBoxIsStuck includes Dead ones
+func (b *Board) _CheckEveryBoxIsTrap() bool {
+	traped := false
+	traped = b._CheckEveryBoxIsStuck() || b._CheckEveryBoxIsTrapByWall()
+	return traped
+}
+
 func (b *Board) Update() {
 	b.BestBoxes = b.GetBestBoxFromDistance()
 	b.MaxMoves = b.GetSumOfBestBoxDistances()
@@ -323,4 +500,5 @@ func (b *Board) Update() {
 	b.ResetFreeCells()
 	b.ResetCanMove()
 	b.FindFreeCells()
+	b._CheckEveryBoxIsTrap()
 }
