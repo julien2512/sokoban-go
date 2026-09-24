@@ -63,7 +63,7 @@ func (c *Controller) switchLayer() {
 		c.m.Layer = model.LayerBox
 		c.m.BoxLayer = 0
 	} else if c.m.Layer == model.LayerBox {
-		if c.m.BoxLayer < len(c.m.Board.Boxes)-1 {
+		if c.m.BoxLayer < len(c.m.Board.S.Boxes)-1 {
 			c.m.BoxLayer++ 
 		} else {
 			c.m.Layer = model.LayerPath
@@ -100,7 +100,7 @@ func (c *Controller) tryUndoLastMove() {
 		case model.NoUndo :
 			return
 		case model.PlayerUndoMove : 
-			fmt.Printf("Move back to %02d %02d\n",c.m.Board.Player.X,c.m.Board.Player.Y)
+			fmt.Printf("Move back to %02d %02d\n",c.m.Board.S.Player.X,c.m.Board.S.Player.Y)
 	}
 	fmt.Printf("Player undo last move\n")
 }

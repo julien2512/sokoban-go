@@ -140,8 +140,8 @@ func (v *View) Draw() {
 	case model.StatePlaying:
 		v.drawBoardLayer()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
-		v.printString(fmt.Sprintf("Boxes : %02d",len(v.m.Board.Boxes)),48,8)
-		v.printString(fmt.Sprintf("MeanMoves : %02d",v.m.Board.MaxMoves),48,9)
+		v.printString(fmt.Sprintf("Boxes : %02d",len(v.m.Board.S.Boxes)),48,8)
+		v.printString(fmt.Sprintf("MeanMoves : %02d",v.m.Board.S.MaxMoves),48,9)
 		v.printString("---Controls---\n\nCursors:  Move\nZ:        Undo\nR:       Reset\nTab: SwitchLayer\nEscape:   Quit", 48, 14)
 	case model.StateLevelComplete:
 		v.drawBoardLayer()
@@ -174,8 +174,8 @@ func (v *View) drawBoardDistances(goal int) {
 		boardOffsetY := ((14 - v.m.Board.Height) / 2) + 1 
 
 		var bestBox int
-		if len(v.m.Board.BestBoxes)>0 {
-			bestBox = v.m.Board.BestBoxes[goal]
+		if len(v.m.Board.S.BestBoxes)>0 {
+			bestBox = v.m.Board.S.BestBoxes[goal]
 		} else { bestBox = -1 }
 
 		for y := 0; y < v.m.Board.Height; y++ {
@@ -232,7 +232,7 @@ func (v *View) drawBoardPath() {
 						} else { v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 							 v.drawArrows(cell,x,y,boardOffsetX,boardOffsetY)
 						}
-					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
+					} else if v.m.Board.S.Player.X == x && v.m.Board.S.Player.Y == y {
 						if cell.IsFree {
 							v.drawBoardSprite(SpriteGoalAndPlayerInFreeSpace, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 						} else {
@@ -250,7 +250,7 @@ func (v *View) drawBoardPath() {
 				}
 			}
 		}
-		v.drawBoardSprite(SpritePlayer, float64(v.m.Board.Player.X), float64(v.m.Board.Player.Y), float64(boardOffsetX), float64(boardOffsetY))
+		v.drawBoardSprite(SpritePlayer, float64(v.m.Board.S.Player.X), float64(v.m.Board.S.Player.Y), float64(boardOffsetX), float64(boardOffsetY))
 	}
 }
 
@@ -263,13 +263,13 @@ func (v *View) drawBoard() {
 				cell := v.m.Board.Get(x, y)
 				switch cell.TypeOf {
 				case model.CellTypeNone:
-					if cell.HasBox && v.m.Board.Cells[v.m.Board.Boxes[cell.Box]].HasBox {
+					if cell.HasBox && v.m.Board.S.Cells[v.m.Board.S.Boxes[cell.Box]].HasBox {
 						v.drawBoardSprite(SpriteBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					}
 				case model.CellTypeGoal:
-					if cell.HasBox && v.m.Board.Cells[v.m.Board.Boxes[cell.Box]].HasBox {
+					if cell.HasBox && v.m.Board.S.Cells[v.m.Board.S.Boxes[cell.Box]].HasBox {
 						v.drawBoardSprite(SpriteGoalAndBox, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
-					} else if v.m.Board.Player.X == x && v.m.Board.Player.Y == y {
+					} else if v.m.Board.S.Player.X == x && v.m.Board.S.Player.Y == y {
 						v.drawBoardSprite(SpriteGoalAndPlayer, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
 					} else {
 						v.drawBoardSprite(SpriteGoal, float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
@@ -279,7 +279,7 @@ func (v *View) drawBoard() {
 				}
 			}
 		}
-		v.drawBoardSprite(SpritePlayer, float64(v.m.Board.Player.X), float64(v.m.Board.Player.Y), float64(boardOffsetX), float64(boardOffsetY))
+		v.drawBoardSprite(SpritePlayer, float64(v.m.Board.S.Player.X), float64(v.m.Board.S.Player.Y), float64(boardOffsetX), float64(boardOffsetY))
 	}
 }
 

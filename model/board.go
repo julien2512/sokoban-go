@@ -23,28 +23,34 @@ type Cell struct {
 	CanMove []bool
 }
 
-type Board struct {
-	Width, Height int
+type SubBoard struct {
 	Boxes []int
 	BestBoxes []int
-	Goals []int
-	Distances [][]int
 	MaxMoves int
 	FreeCells []int
 
 	Cells         []Cell
+	Player        *Player	
+}
+
+type Board struct {
+	Width, Height int
+	Goals []int
+	Distances [][]int
+
+	S *SubBoard
+
 	LastMove      *LastMove
-	Player        *Player
 }
 
 // NewBoard - Creates a board (map data encoding: Player "@", Box "$", Goal ".", Wall "#", Goal+Player "+", Goal+Box "*")
 func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
-	b := Board{}
+	b := Board{S:&SubBoard{}}
 
 	b.Width = boardWidth
 	b.Height = boardHeight
 
-	b.Cells = make([]Cell, b.Width*b.Height)
+	b.S.Cells = make([]Cell, b.Width*b.Height)
 	boxes  := 0
 
 	for y := 0; y < b.Height; y++ {
@@ -54,12 +60,12 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 			cell := Cell{CanMove:make([]bool,4),X:x,Y:y}
 			switch code {
 			case "@":
-				b.Player = NewPlayer(x, y)
+				b.S.Player = NewPlayer(x, y)
 			case "$":
 				cell.HasBox = true
 				cell.Box    = boxes
 				boxes++
-				b.Boxes = append(b.Boxes,index)
+				b.S.Boxes = append(b.S.Boxes,index)
 			case ".":
 				cell.TypeOf = CellTypeGoal
 				b.Goals = append(b.Goals,index)
@@ -67,17 +73,17 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 				cell.TypeOf = CellTypeWall
 			case "+":
 				cell.TypeOf = CellTypeGoal
-				b.Player = NewPlayer(x, y)
+				b.S.Player = NewPlayer(x, y)
 				b.Goals = append(b.Goals,index)
 			case "*":
 				cell.TypeOf = CellTypeGoal
 				cell.HasBox = true
 				cell.Box    = boxes
 				boxes++
-				b.Boxes = append(b.Boxes,index)
+				b.S.Boxes = append(b.S.Boxes,index)
 				b.Goals = append(b.Goals,index)
 			}
-			b.Cells[index] = cell
+			b.S.Cells[index] = cell
 		}
 	}
 
@@ -93,17 +99,17 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 
 // Get - Returns the cell at the given location
 func (b *Board) Get(x, y int) *Cell {
-	return &b.Cells[(y*b.Width)+x]
+	return &b.S.Cells[(y*b.Width)+x]
 }
 
 // Get - Returns the cell at the given location
 func (b *Board) GetBox(i int) *Cell {
-	return &b.Cells[b.Boxes[i]]
+	return &b.S.Cells[b.S.Boxes[i]]
 }
 
 // IsComplete - Returns true if every goal cell on the board has a box
 func (b *Board) IsComplete() bool {
-	for _, cell := range b.Cells {
+	for _, cell := range b.S.Cells {
 		if cell.TypeOf == CellTypeGoal && !cell.HasBox {
 			return false
 		}
@@ -113,7 +119,7 @@ func (b *Board) IsComplete() bool {
 
 func (b *Board) GetDistancesFromRecursive(x,y,d int, distances *[]int) {
 	index := (y*b.Width)+x
-	if b.Cells[index].TypeOf == CellTypeWall || ((*distances)[index]!=0 && (*distances)[index]<d) {
+	if b.S.Cells[index].TypeOf == CellTypeWall || ((*distances)[index]!=0 && (*distances)[index]<d) {
 		return
 	}
 	(*distances)[index] = d
@@ -134,9 +140,9 @@ func (b *Board) GetDistancesFrom(x,y int) []int {
 func (b *Board) GetMinBestGoalBox(goal int,inactive []bool) int {
 	min := 999
 	current := -1
-	for i:=0;i<len(b.Boxes);i++ {
+	for i:=0;i<len(b.S.Boxes);i++ {
 		if !inactive[i] {
-			distance := b.Distances[goal][b.Boxes[i]]
+			distance := b.Distances[goal][b.S.Boxes[i]]
 			if distance < min {
 				min = distance
 				current = i
@@ -151,7 +157,7 @@ func (b *Board) GetBestBoxFromDistance() []int {
 	bestBoxes := make([]int,len(b.Goals))
 	
 	// it's fastest to use inactive because of the bool default value
-	inactive := make([]bool,len(b.Boxes))
+	inactive := make([]bool,len(b.S.Boxes))
 	
 	for goal:=0;goal<len(b.Goals);goal++ {
 		bestBox := b.GetMinBestGoalBox(goal,inactive)
@@ -166,7 +172,7 @@ func (b *Board) GetSumOfBestBoxDistances() int {
 	sum := 0
 	
 	for i:=0;i<len(b.Goals);i++ {
-		distance := b.Distances[i][b.Boxes[b.BestBoxes[i]]]-1
+		distance := b.Distances[i][b.S.Boxes[b.S.BestBoxes[i]]]-1
 		sum = sum + distance
 	}
 	
@@ -174,20 +180,20 @@ func (b *Board) GetSumOfBestBoxDistances() int {
 }
 
 func (b *Board) ResetFreeCells() {
-	if len(b.FreeCells)>0 {
-		for i:=0;i<len(b.FreeCells);i++ {
-			b.Cells[b.FreeCells[i]].IsFree = false
+	if len(b.S.FreeCells)>0 {
+		for i:=0;i<len(b.S.FreeCells);i++ {
+			b.S.Cells[b.S.FreeCells[i]].IsFree = false
 		}
-		b.FreeCells = []int{}
+		b.S.FreeCells = []int{}
 	}
 }
 
 func (b *Board) ResetCanMove() {
-	for i:=0;i<len(b.Boxes);i++ {
-		b.Cells[b.Boxes[i]].CanMove[direction.U] = false
-		b.Cells[b.Boxes[i]].CanMove[direction.D] = false
-		b.Cells[b.Boxes[i]].CanMove[direction.L] = false
-		b.Cells[b.Boxes[i]].CanMove[direction.R] = false
+	for i:=0;i<len(b.S.Boxes);i++ {
+		b.S.Cells[b.S.Boxes[i]].CanMove[direction.U] = false
+		b.S.Cells[b.S.Boxes[i]].CanMove[direction.D] = false
+		b.S.Cells[b.S.Boxes[i]].CanMove[direction.L] = false
+		b.S.Cells[b.S.Boxes[i]].CanMove[direction.R] = false
 	}
 }
 
@@ -213,12 +219,12 @@ func (b *Board) CheckIfBoxInDirectionCanMove(x,y int, dir direction.Direction) {
 // true if it finds a box
 func (b *Board) FindFreeCellsFrom(x,y int) bool {
 	index := y*b.Width + x
-	c := &b.Cells[index]
+	c := &b.S.Cells[index]
 	if c.IsFree || c.TypeOf == CellTypeWall { return false }
 	if c.HasBox { return true }
 
 	c.IsFree = true
-	b.FreeCells = append(b.FreeCells,index)
+	b.S.FreeCells = append(b.S.FreeCells,index)
 	if b.FindFreeCellsFrom(x+1,y) { b.CheckIfBoxInDirectionCanMove(x,y,direction.R) }
 	if b.FindFreeCellsFrom(x-1,y) { b.CheckIfBoxInDirectionCanMove(x,y,direction.L) }
 	if b.FindFreeCellsFrom(x,y+1) { b.CheckIfBoxInDirectionCanMove(x,y,direction.D) }
@@ -227,7 +233,7 @@ func (b *Board) FindFreeCellsFrom(x,y int) bool {
 }
 
 func (b *Board) FindFreeCells() {
-	b.FindFreeCellsFrom(b.Player.X,b.Player.Y)
+	b.FindFreeCellsFrom(b.S.Player.X,b.S.Player.Y)
 }
 
 type MoveType int
@@ -240,8 +246,8 @@ const (
 )
 
 func (b *Board) MovePlayer(dir direction.Direction, undo bool) (bool, MoveType) {
-	lastX := b.Player.X
-	lastY := b.Player.Y
+	lastX := b.S.Player.X
+	lastY := b.S.Player.Y
 	targetX := lastX
 	targetY := lastY
 	nextX := targetX
@@ -275,18 +281,18 @@ func (b *Board) MovePlayer(dir direction.Direction, undo bool) (bool, MoveType) 
 				return false,PlayerBlockedByBox
 			} else {
 				nextCell.Box = targetCell.Box // works because we can't push 2 boxes at the same time
-				b.Boxes[nextCell.Box] = nextY*b.Width+nextX
+				b.S.Boxes[nextCell.Box] = nextY*b.Width+nextX
 				targetCell.HasBox = false
 				nextCell.HasBox = true
-				b.Player.X = targetX
-				b.Player.Y = targetY
+				b.S.Player.X = targetX
+				b.S.Player.Y = targetY
 				if undo { b.LastMove = NewLastMove(lastX,lastY,targetCell,nextCell,b.LastMove) }
 				b.Update()
 				return true,PlayerMoveAndPush
 			}
 		} else {
-			b.Player.X = targetX
-			b.Player.Y = targetY
+			b.S.Player.X = targetX
+			b.S.Player.Y = targetY
 			if undo { b.LastMove = NewLastMove(lastX,lastY,nil,nil,b.LastMove) }
 			b.Update()
 			return true,PlayerMove
@@ -307,14 +313,14 @@ func (b *Board) UndoLastMove() (bool,UndoType) {
 	if b.LastMove == nil {
 		return false,NoUndo
 	}
-	b.Player.X = b.LastMove.LastX
-	b.Player.Y = b.LastMove.LastY
+	b.S.Player.X = b.LastMove.LastX
+	b.S.Player.Y = b.LastMove.LastY
 	var ret UndoType
 	if b.LastMove.LastTargetCell != nil {
 		b.LastMove.LastTargetCell.HasBox = true
 		b.LastMove.LastNextCell.HasBox = false
 		b.LastMove.LastTargetCell.Box = b.LastMove.LastNextCell.Box
-		b.Boxes[b.LastMove.LastTargetCell.Box] = b.LastMove.LastTargetCell.Y*b.Width+b.LastMove.LastTargetCell.X
+		b.S.Boxes[b.LastMove.LastTargetCell.Box] = b.LastMove.LastTargetCell.Y*b.Width+b.LastMove.LastTargetCell.X
 		ret = PlayerUndoMove
 	} else { ret = PlayerUndoAndUnpush }
 	b.LastMove = b.LastMove.PreviousMove
@@ -339,7 +345,7 @@ func (b *Board) _CheckOneBoxIsDead(x,y int) bool {
 
 func (b *Board) _CheckEveryBoxIsDead() bool {
 	count := 0
-	for i :=0;i<len(b.Boxes);i++ {
+	for i :=0;i<len(b.S.Boxes);i++ {
 		box := b.GetBox(i)
 		y := box.Y
 		x := box.X
@@ -394,7 +400,7 @@ func (b *Board) _CheckOneBoxIsTrapByDirWall(x,y int, dirx, diry int) bool {
 
 func (b *Board) _CheckEveryBoxIsTrapByWall() bool {
 	count := 0
-	for i :=0;i<len(b.Boxes);i++ {
+	for i :=0;i<len(b.S.Boxes);i++ {
 		box := b.GetBox(i)
 		y := box.Y
 		x := box.X
@@ -448,7 +454,7 @@ func (b *Board) _CheckEveryBoxIsStuck() bool {
 	free := make(map[*Cell]bool)
 
 	// pile cells
-	for i :=0;i<len(b.Boxes);i++ {
+	for i :=0;i<len(b.S.Boxes);i++ {
 		c := b.Get(b.GetBox(i).X,b.GetBox(i).Y)
 		pile.Push(c)
 	}
@@ -475,7 +481,7 @@ func (b *Board) _CheckEveryBoxIsStuck() bool {
 
 	// mark every stuck box as dead
 	traped := false
-	for i :=0;i<len(b.Boxes);i++ {
+	for i :=0;i<len(b.S.Boxes);i++ {
 		cell := b.GetBox(i)
 
 		if !free[cell] && cell.TypeOf != CellTypeGoal {
@@ -498,10 +504,10 @@ func (b *Board) Update() {
 	b.ResetCanMove()
 	b.FindFreeCells()
 	if b._CheckEveryBoxIsTrap() {
-		b.BestBoxes = []int{}
-		b.MaxMoves = 1000
+		b.S.BestBoxes = []int{}
+		b.S.MaxMoves = 1000
 	} else {
-		b.BestBoxes = b.GetBestBoxFromDistance()
-		b.MaxMoves = b.GetSumOfBestBoxDistances()
+		b.S.BestBoxes = b.GetBestBoxFromDistance()
+		b.S.MaxMoves = b.GetSumOfBestBoxDistances()
 	}
 }
