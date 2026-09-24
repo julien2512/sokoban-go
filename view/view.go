@@ -173,7 +173,10 @@ func (v *View) drawBoardDistances(goal int) {
 		boardOffsetX := ((22 - v.m.Board.Width) / 2) + 1 
 		boardOffsetY := ((14 - v.m.Board.Height) / 2) + 1 
 
-		bestBox := v.m.Board.BestBoxes[goal]	
+		var bestBox int
+		if len(v.m.Board.BestBoxes)>0 {
+			bestBox = v.m.Board.BestBoxes[goal]
+		} else { bestBox = -1 }
 
 		for y := 0; y < v.m.Board.Height; y++ {
 			for x := 0; x < v.m.Board.Width; x++ {

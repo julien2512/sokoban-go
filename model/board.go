@@ -494,11 +494,14 @@ func (b *Board) _CheckEveryBoxIsTrap() bool {
 }
 
 func (b *Board) Update() {
-	b.BestBoxes = b.GetBestBoxFromDistance()
-	b.MaxMoves = b.GetSumOfBestBoxDistances()
-
 	b.ResetFreeCells()
 	b.ResetCanMove()
 	b.FindFreeCells()
-	b._CheckEveryBoxIsTrap()
+	if b._CheckEveryBoxIsTrap() {
+		b.BestBoxes = []int{}
+		b.MaxMoves = 1000
+	} else {
+		b.BestBoxes = b.GetBestBoxFromDistance()
+		b.MaxMoves = b.GetSumOfBestBoxDistances()
+	}
 }
