@@ -196,8 +196,12 @@ func (v *View) drawBoardDistances(goal int) {
 }
 
 func (v *View) drawArrowsDir(cell *model.Cell,x, y, boardOffsetX, boardOffsetY int, dir direction.Direction) {
-	if cell.CanMove[dir] { 
-		v.drawBoardSprite(SpriteBoxGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+	if cell.CanMove[dir] {
+		if cell.Box == v.m.Board.S.BestSubBoardBox && dir == v.m.Board.S.BestSubBoardDir {
+			v.drawBoardSprite(SpriteBoxGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+		} else {
+			v.drawBoardSprite(SpriteBoxShallGoUp+spriteIndex(dir), float64(x), float64(y), float64(boardOffsetX), float64(boardOffsetY))
+		}
 	}
 }
 

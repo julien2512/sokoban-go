@@ -76,7 +76,8 @@ func (c *Controller) switchLayer() {
 // tryMovePlayer - Move player (and an adjacent box where appropriate) in the specified direction if possible. Check for board completion (and handle appropriately) if a box is moved
 func (c *Controller) tryMovePlayer(dir direction.Direction) {
 	_,typ := c.m.Board.MovePlayer(dir,true)
-
+	c.m.Board.Update()
+	c.m.Board.CheckMoveCosts()
 	switch(typ) {
 		case model.PlayerBlockedByWall :
 			fmt.Printf("%v: Player blocked (wall)\n", dir)
@@ -95,6 +96,8 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 
 func (c *Controller) tryUndoLastMove() {
 	_,ret := c.m.Board.UndoLastMove()
+	c.m.Board.Update()
+	c.m.Board.CheckMoveCosts()
 
 	switch(ret) {
 		case model.NoUndo :
@@ -114,6 +117,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.State = model.StatePlaying
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 		c.m.Board.Update()
+		c.m.Board.CheckMoveCosts()
 	} else {
 		c.m.State = model.StateGameComplete
 		fmt.Print("*** GAME COMPLETE! ***\n(space key to restart)\n")
@@ -127,4 +131,5 @@ func (c *Controller) restartLevel() {
 	c.m.State = model.StatePlaying
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 	c.m.Board.Update()
+	c.m.Board.CheckMoveCosts()
 }

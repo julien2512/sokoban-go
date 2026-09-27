@@ -21,16 +21,47 @@ type Cell struct {
 	IsFree bool
 	IsDead bool
 	CanMove []bool
+	MoveCost []int
 }
 
 type SubBoard struct {
 	Boxes []int
+	Cells         []Cell
+	Player        *Player
+
 	BestBoxes []int
 	MaxMoves int
-	FreeCells []int
 
-	Cells         []Cell
-	Player        *Player	
+	BestSubBoardDir direction.Direction
+	BestSubBoardMoves int
+	BestSubBoardBox int
+
+	FreeCells []int
+}
+
+func (c *Cell) CloneCell() *Cell {
+	clone := &Cell{X:c.X,Y:c.Y,TypeOf:c.TypeOf,HasBox:c.HasBox,Box:c.Box,IsFree:c.IsFree,IsDead:c.IsDead}
+	clone.CanMove = make([]bool,4)
+	clone.MoveCost = make([]int,4)
+	for i:=0;i<4;i++ {
+		clone.CanMove[i] = c.CanMove[i]
+		clone.MoveCost[i] = c.MoveCost[i]
+	}
+	return clone
+}
+
+func (s *SubBoard) CloneSubBoard() *SubBoard {
+	clone := &SubBoard{}
+	clone.Boxes = make([]int,len(s.Boxes))
+	clone.Cells = make([]Cell,len(s.Cells))
+	clone.Player = &Player{X:s.Player.X,Y:s.Player.Y}
+	for i:=0;i<len(s.Boxes);i++ {
+		clone.Boxes[i] = s.Boxes[i]
+	}
+	for i:=0;i<len(s.Cells);i++ {
+		clone.Cells[i] = *(&s.Cells[i]).CloneCell()
+	}
+	return clone
 }
 
 type Board struct {
@@ -57,7 +88,7 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 		for x := 0; x < b.Width; x++ {
 			index := (y*b.Width)+x
 			code := string(mapData[index])
-			cell := Cell{CanMove:make([]bool,4),X:x,Y:y}
+			cell := Cell{CanMove:make([]bool,4),MoveCost:make([]int,4),X:x,Y:y}
 			switch code {
 			case "@":
 				b.S.Player = NewPlayer(x, y)
@@ -287,14 +318,12 @@ func (b *Board) MovePlayer(dir direction.Direction, undo bool) (bool, MoveType) 
 				b.S.Player.X = targetX
 				b.S.Player.Y = targetY
 				if undo { b.LastMove = NewLastMove(lastX,lastY,targetCell,nextCell,b.LastMove) }
-				b.Update()
 				return true,PlayerMoveAndPush
 			}
 		} else {
 			b.S.Player.X = targetX
 			b.S.Player.Y = targetY
 			if undo { b.LastMove = NewLastMove(lastX,lastY,nil,nil,b.LastMove) }
-			b.Update()
 			return true,PlayerMove
 		}
 	}
@@ -324,7 +353,6 @@ func (b *Board) UndoLastMove() (bool,UndoType) {
 		ret = PlayerUndoMove
 	} else { ret = PlayerUndoAndUnpush }
 	b.LastMove = b.LastMove.PreviousMove
-	b.Update()
 	return true,ret
 }
 
@@ -497,6 +525,55 @@ func (b *Board) _CheckEveryBoxIsTrap() bool {
 	traped := false
 	traped = b._CheckEveryBoxIsStuck() || b._CheckEveryBoxIsTrapByWall()
 	return traped
+}
+
+func (b *Board) CheckMoveCostsForOneBox(box int,dir direction.Direction) {
+	cell := b.S.Cells[b.S.Boxes[box]]
+	if cell.CanMove[dir] {
+		lastsubboard := b.S
+		newsubboard := b.S.CloneSubBoard()
+		b.S = newsubboard
+		
+		playerX := cell.X
+		playerY := cell.Y
+		
+		switch dir {
+		case direction.U:
+			playerY++
+		case direction.D:
+			playerY--
+		case direction.L:
+			playerX++
+		case direction.R:
+			playerX--
+		}
+
+		b.S.Player.X = playerX
+		b.S.Player.Y = playerY
+		
+		b.MovePlayer(dir,false)
+		b.Update()
+
+		cell.MoveCost[dir] = b.S.MaxMoves
+
+		if b.S.MaxMoves < lastsubboard.BestSubBoardMoves {
+			lastsubboard.BestSubBoardMoves = b.S.MaxMoves
+			lastsubboard.BestSubBoardBox = box
+			lastsubboard.BestSubBoardDir = dir
+		}
+		
+		b.S = lastsubboard
+	} else { cell.MoveCost[dir] = 1000 }
+} 
+
+func (b *Board) CheckMoveCosts() {
+	b.S.BestSubBoardMoves = 1000
+	for i:=0;i<len(b.S.Boxes);i++ {
+		b.CheckMoveCostsForOneBox(i,direction.U)
+		b.CheckMoveCostsForOneBox(i,direction.D)
+		b.CheckMoveCostsForOneBox(i,direction.L)
+		b.CheckMoveCostsForOneBox(i,direction.R)
+	}
 }
 
 func (b *Board) Update() {
