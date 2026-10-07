@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+	"slices"
+	"strings"
 	"github.com/TheInvader360/sokoban-go/direction"
 )
 
@@ -33,10 +36,39 @@ type SubBoard struct {
 	MaxMoves int
 
 	BestSubBoardDir direction.Direction
-	BestSubBoardMoves int
 	BestSubBoardBox int
+	ParentSubBoard *SubBoard
+	ParentSubBoardDir direction.Direction
+	ParentSubBoardBox int
+
+	str string
 
 	FreeCells []int
+}
+
+func (S *SubBoard) GetString() string {
+	if S.str != "" { return S.str }
+	index := 0
+	str := ""
+	for i:=0;i<len(S.Cells)/2;i++ {
+		num:=0
+		val:=0
+		for j:=0;j<2 && index<len(S.Cells);j++ {
+			cell := S.Cells[index]
+			if cell.HasBox {
+				val = 1
+			} else if cell.IsFree {
+				val = 2
+			} else if cell.TypeOf==CellTypeWall {
+				val = 3
+			} else { val = 0 }
+			num = num*4+val
+			index++
+		}
+		str += string(65+num)
+	}
+	S.str = str
+	return str
 }
 
 func (c *Cell) CloneCell() *Cell {
@@ -55,11 +87,23 @@ func (s *SubBoard) CloneSubBoard() *SubBoard {
 	clone.Boxes = make([]int,len(s.Boxes))
 	clone.Cells = make([]Cell,len(s.Cells))
 	clone.Player = &Player{X:s.Player.X,Y:s.Player.Y}
+	clone.FreeCells = make([]int,len(s.FreeCells))
 	for i:=0;i<len(s.Boxes);i++ {
 		clone.Boxes[i] = s.Boxes[i]
 	}
 	for i:=0;i<len(s.Cells);i++ {
-		clone.Cells[i] = *(&s.Cells[i]).CloneCell()
+		clone.Cells[i].X = s.Cells[i].X
+		clone.Cells[i].Y = s.Cells[i].Y
+		clone.Cells[i].TypeOf = s.Cells[i].TypeOf
+		clone.Cells[i].HasBox = s.Cells[i].HasBox
+		clone.Cells[i].Box = s.Cells[i].Box
+		clone.Cells[i].IsFree = s.Cells[i].IsFree
+		clone.Cells[i].IsDead = s.Cells[i].IsDead
+		clone.Cells[i].CanMove = make([]bool,4)
+		clone.Cells[i].MoveCost = make([]int,4)
+	}
+	for i:=0;i<len(s.FreeCells);i++ {
+		clone.FreeCells[i] = s.FreeCells[i]
 	}
 	return clone
 }
@@ -128,9 +172,48 @@ func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 	return &b
 }
 
+func (b *Board) Print() {
+	for y :=0;y<b.Height;y++ {
+		for x :=0;x<b.Width;x++ {
+			c := b.Get(x,y)
+			
+			if c.HasBox && c.TypeOf == CellTypeGoal && c.X==x && c.Y==y { fmt.Print("*")
+			} else if x == b.S.Player.X && y == b.S.Player.Y && c.TypeOf == CellTypeGoal { fmt.Print("+")
+			} else if c.TypeOf == CellTypeWall { fmt.Print("#")
+			} else if c.TypeOf == CellTypeGoal { fmt.Print(".")
+			} else if c.HasBox && c.TypeOf != CellTypeGoal && c.X==x && c.Y==y { fmt.Print("$")
+			} else if x == b.S.Player.X && y == b.S.Player.Y && c.TypeOf != CellTypeGoal { fmt.Print("@")
+			} else { fmt.Print(" ") }
+		}
+		fmt.Println()
+	}
+}
+
+func (S *SubBoard) PrintSubBoard(W,H int) {
+	for y :=0;y<H;y++ {
+		for x :=0;x<W;x++ {
+			c := S.GetFromSubBoard(x,y,W)
+			
+			if c.HasBox && c.TypeOf == CellTypeGoal && c.X==x && c.Y==y { fmt.Print("*")
+			} else if x == S.Player.X && y == S.Player.Y && c.TypeOf == CellTypeGoal { fmt.Print("+")
+			} else if c.TypeOf == CellTypeWall { fmt.Print("#")
+			} else if c.TypeOf == CellTypeGoal { fmt.Print(".")
+			} else if c.HasBox && c.TypeOf != CellTypeGoal && c.X==x && c.Y==y { fmt.Print("$")
+			} else if x == S.Player.X && y == S.Player.Y && c.TypeOf != CellTypeGoal { fmt.Print("@")
+			} else { fmt.Print(" ") }
+		}
+		fmt.Println()
+	}
+}
+
 // Get - Returns the cell at the given location
 func (b *Board) Get(x, y int) *Cell {
 	return &b.S.Cells[(y*b.Width)+x]
+}
+
+// Get - Returns the cell at the given location
+func (S *SubBoard) GetFromSubBoard(x, y int, W int) *Cell {
+	return &S.Cells[(y*W)+x]
 }
 
 // Get - Returns the cell at the given location
@@ -527,12 +610,14 @@ func (b *Board) _CheckEveryBoxIsTrap() bool {
 	return traped
 }
 
-func (b *Board) CheckMoveCostsForOneBox(box int,dir direction.Direction) {
-	cell := b.S.Cells[b.S.Boxes[box]]
+func (b *Board) CheckMoveCostsForOneBox(box int,dir direction.Direction) *SubBoard {
+	cell := &(b.S.Cells[b.S.Boxes[box]])
 	if cell.CanMove[dir] {
 		lastsubboard := b.S
-		newsubboard := b.S.CloneSubBoard()
-		b.S = newsubboard
+		b.S = b.S.CloneSubBoard()
+		b.S.ParentSubBoard = lastsubboard
+		b.S.ParentSubBoardDir = dir
+		b.S.ParentSubBoardBox = box
 		
 		playerX := cell.X
 		playerY := cell.Y
@@ -554,25 +639,12 @@ func (b *Board) CheckMoveCostsForOneBox(box int,dir direction.Direction) {
 		b.MovePlayer(dir,false)
 		b.Update()
 
-		cell.MoveCost[dir] = b.S.MaxMoves
-
-		if b.S.MaxMoves < lastsubboard.BestSubBoardMoves {
-			lastsubboard.BestSubBoardMoves = b.S.MaxMoves
-			lastsubboard.BestSubBoardBox = box
-			lastsubboard.BestSubBoardDir = dir
-		}
-		
+		newsubboard := b.S
 		b.S = lastsubboard
-	} else { cell.MoveCost[dir] = 1000 }
-} 
-
-func (b *Board) CheckMoveCosts() {
-	b.S.BestSubBoardMoves = 1000
-	for i:=0;i<len(b.S.Boxes);i++ {
-		b.CheckMoveCostsForOneBox(i,direction.U)
-		b.CheckMoveCostsForOneBox(i,direction.D)
-		b.CheckMoveCostsForOneBox(i,direction.L)
-		b.CheckMoveCostsForOneBox(i,direction.R)
+		return newsubboard
+	} else {
+		cell.MoveCost[dir] = 1000
+		return nil
 	}
 }
 
@@ -587,4 +659,127 @@ func (b *Board) Update() {
 		b.S.BestBoxes = b.GetBestBoxFromDistance()
 		b.S.MaxMoves = b.GetSumOfBestBoxDistances()
 	}
+}
+
+
+type NextTry struct {
+	S *SubBoard
+	Deep int
+}
+
+func SortNextTry(a, b *NextTry) int {
+	if a.S.MaxMoves < b.S.MaxMoves { return -1 }
+	if a.S.MaxMoves == b.S.MaxMoves { return strings.Compare(a.S.GetString(),b.S.GetString()) }
+	return 1
+}
+
+type Guesser struct {
+	Checked map[string]*NextTry
+	Next    []*NextTry
+}
+
+func (g *Guesser) PrintGuesser() {
+	fmt.Println("Print Guesser")
+	for i:=0;i<len(g.Next);i++ {
+		fmt.Printf("Next %0d deep %0d Moves %0d: %s\n",i,g.Next[i].Deep,g.Next[i].S.MaxMoves,g.Next[i].S.GetString())
+	}
+}
+
+func NewGuesser() *Guesser {
+	g := &Guesser{Checked:make(map[string]*NextTry)}
+	return g
+}
+
+func (g *Guesser) Pop() *NextTry {
+	if len(g.Next)==0 { return nil }
+	pop := g.Next[0]
+	g.Next = g.Next[1:]
+	return pop
+}
+
+func (g *Guesser) Push(S *SubBoard,Deep int) bool {
+	next := &NextTry{S:S,Deep:Deep}
+	str := next.S.GetString()
+	checked,ok := g.Checked[str]
+	if !ok {
+		index,_ := slices.BinarySearchFunc(g.Next,next,SortNextTry)
+		g.Next = slices.Insert(g.Next,index,next)
+		g.Checked[str] = next
+		return true
+	} else {
+		if checked.Deep > Deep {
+			g.Checked[str] = next
+			index,_ := slices.BinarySearchFunc(g.Next,next,SortNextTry)
+			for index < len(g.Next) && g.Next[index].S.GetString()!=str && g.Next[index].S.MaxMoves == next.S.MaxMoves {
+				index++
+			}
+			if index < len(g.Next) && g.Next[index].S.GetString()==str {
+				g.Next[index] = next
+			}
+		}
+		return false
+	}
+}
+
+func (S *SubBoard) CountMoves() int {
+	count := 0
+	for i:=0;i<len(S.Boxes);i++ {
+		for dir:=0;dir<4;dir++ {
+			if S.Cells[S.Boxes[i]].CanMove[dir] { count++ }
+		}
+	}
+	return count
+}
+
+func (b *Board) Guess() {
+//	maxdeep := b.S.MaxMoves+7 // Allow 5 more steps
+	goal := false
+	var GoalSubBoard *SubBoard
+	
+	g := NewGuesser()
+	g.Push(b.S,0)
+
+	saveSubBoard := b.S
+
+	for len(g.Next)>0 && !goal {
+		current := g.Pop()
+		currentDeep := current.Deep
+		b.S = current.S
+
+//		fmt.Printf("Pop Board %s at %02d moves and deep %02d---------\n",b.S.GetString(),b.S.MaxMoves,currentDeep)
+//		fmt.Printf("There is %02d subboards\n",len(g.Next))
+//		g.PrintGuesser()
+//		current.S.PrintSubBoard(b.Width,b.Height)
+		for i:=0;i<len(b.S.Boxes)&&!goal;i++ {
+			for dir:=0;dir<4&&!goal;dir++ {
+				S := b.CheckMoveCostsForOneBox(i,direction.U+direction.Direction(dir))
+				if S!=nil && S.MaxMoves<1000 { //&& currentDeep+S.MaxMoves<maxdeep  {
+					if S.MaxMoves == 0 { 
+						goal=true
+						GoalSubBoard=S;
+						break;
+					}
+//					fmt.Printf("Push board %s at %02d moves and %02d deep for %02d\n",S.GetString(),S.MaxMoves,currentDeep+1,maxdeep)
+					g.Push(S,currentDeep+1);
+//					S.PrintSubBoard(b.Width,b.Height) 
+//					fmt.Printf("There is %02d subboards\n",len(g.Next))
+				} // else if S!=nil { fmt.Printf("Skip board %s at %02d moves and %02d deep for %02d\n",S.GetString(),S.MaxMoves,currentDeep+1,maxdeep) 
+//				}
+			}
+		}
+	}
+	b.S = saveSubBoard
+
+	if goal {
+//		fmt.Println("Goal !")
+		var parent *SubBoard
+//		GoalSubBoard.PrintSubBoard(b.Width,b.Height)
+		for parent != saveSubBoard {
+			parent = g.Checked[GoalSubBoard.ParentSubBoard.GetString()].S
+			parent.BestSubBoardDir = GoalSubBoard.ParentSubBoardDir
+			parent.BestSubBoardBox = GoalSubBoard.ParentSubBoardBox
+//			parent.PrintSubBoard(b.Width,b.Height)
+			GoalSubBoard = parent
+		}
+	}// else { fmt.Println("Fail !") }
 }
