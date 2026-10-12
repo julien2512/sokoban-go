@@ -1,5 +1,9 @@
 package model
 
+import (
+	"time"
+)
+
 type state int
 
 const (
@@ -21,6 +25,8 @@ type Model struct {
 	TickAccumulator int
 	Layer           int
 	BoxLayer	int
+	SolveDuration	time.Duration
+	Boards		int
 }
 
 // NewModel - Creates a model
@@ -39,4 +45,11 @@ func (m *Model) Update() {
 	if m.TickAccumulator > 20 {
 		m.TickAccumulator = 0
 	}
+}
+
+func (m *Model) Guess() {
+	start := time.Now()
+	m.Board.Update()
+	m.Boards = m.Board.Guess()
+	m.SolveDuration = time.Now().Sub(start)
 }

@@ -731,8 +731,9 @@ func (S *SubBoard) CountMoves() int {
 	return count
 }
 
-func (b *Board) Guess() {
-//	maxdeep := b.S.MaxMoves+7 // Allow 5 more steps
+var debugPrint bool = false
+
+func (b *Board) Guess() int {
 	goal := false
 	var GoalSubBoard *SubBoard
 	
@@ -746,40 +747,43 @@ func (b *Board) Guess() {
 		currentDeep := current.Deep
 		b.S = current.S
 
-//		fmt.Printf("Pop Board %s at %02d moves and deep %02d---------\n",b.S.GetString(),b.S.MaxMoves,currentDeep)
-//		fmt.Printf("There is %02d subboards\n",len(g.Next))
-//		g.PrintGuesser()
-//		current.S.PrintSubBoard(b.Width,b.Height)
+		if (debugPrint) {
+			fmt.Printf("Pop Board %s at %02d moves and deep %02d---------\n",b.S.GetString(),b.S.MaxMoves,currentDeep)
+			fmt.Printf("There is %02d subboards\n",len(g.Next))
+			g.PrintGuesser()
+			current.S.PrintSubBoard(b.Width,b.Height)
+		}
 		for i:=0;i<len(b.S.Boxes)&&!goal;i++ {
 			for dir:=0;dir<4&&!goal;dir++ {
 				S := b.CheckMoveCostsForOneBox(i,direction.U+direction.Direction(dir))
-				if S!=nil && S.MaxMoves<1000 { //&& currentDeep+S.MaxMoves<maxdeep  {
+				if S!=nil && S.MaxMoves<1000 {
 					if S.MaxMoves == 0 { 
 						goal=true
 						GoalSubBoard=S;
 						break;
 					}
-//					fmt.Printf("Push board %s at %02d moves and %02d deep for %02d\n",S.GetString(),S.MaxMoves,currentDeep+1,maxdeep)
+					if debugPrint { fmt.Printf("Push board %s at %02d moves and %02d deep\n",S.GetString(),S.MaxMoves,currentDeep+1) }
 					g.Push(S,currentDeep+1);
-//					S.PrintSubBoard(b.Width,b.Height) 
-//					fmt.Printf("There is %02d subboards\n",len(g.Next))
-				} // else if S!=nil { fmt.Printf("Skip board %s at %02d moves and %02d deep for %02d\n",S.GetString(),S.MaxMoves,currentDeep+1,maxdeep) 
-//				}
+					if debugPrint {
+						S.PrintSubBoard(b.Width,b.Height) 
+						fmt.Printf("There is %02d subboards\n",len(g.Next))
+					}
+				} else if debugPrint && S!=nil { fmt.Printf("Skip board %s at %02d moves and %02d deep\n",S.GetString(),S.MaxMoves,currentDeep+1) }
 			}
 		}
 	}
 	b.S = saveSubBoard
 
 	if goal {
-//		fmt.Println("Goal !")
 		var parent *SubBoard
-//		GoalSubBoard.PrintSubBoard(b.Width,b.Height)
+		if debugPrint { fmt.Println("Goal !");GoalSubBoard.PrintSubBoard(b.Width,b.Height) }
 		for parent != saveSubBoard {
 			parent = g.Checked[GoalSubBoard.ParentSubBoard.GetString()].S
 			parent.BestSubBoardDir = GoalSubBoard.ParentSubBoardDir
 			parent.BestSubBoardBox = GoalSubBoard.ParentSubBoardBox
-//			parent.PrintSubBoard(b.Width,b.Height)
+			if debugPrint { parent.PrintSubBoard(b.Width,b.Height) }
 			GoalSubBoard = parent
 		}
-	}// else { fmt.Println("Fail !") }
+	} else if debugPrint { fmt.Println("Fail !") }
+	return len(g.Checked)+len(g.Next)
 }

@@ -293,6 +293,8 @@ func (v *View) drawBoardLayer() {
 	} else if v.m.Layer == model.LayerBox {
 		v.drawBoardDistances(v.m.BoxLayer)
 	} else if v.m.Layer == model.LayerPath {
+		v.printString(fmt.Sprintf("Solve Duration : %02d ns", v.m.SolveDuration),0,0)
+		v.printString(fmt.Sprintf("Boards : %02d", v.m.Boards),0,1)
 		v.drawBoardPath()
 	}
 }
