@@ -46,6 +46,56 @@ type SubBoard struct {
 	FreeCells []int
 }
 
+func (b *Board) GetTargetCell() *Cell {
+	dx,dy := b.GetDirections(b.S.BestSubBoardDir)
+	target := b.S.Cells[b.S.Boxes[b.S.BestSubBoardBox]]
+	targetX := target.X - dx
+	targetY := target.Y - dy
+	return b.Get(targetX,targetY)
+}
+
+func (b *Board) GetDistancesFromTo(fromX,fromY int, targetX,targetY int, distances []int,dist int) {
+	index := targetX+targetY*b.Width
+	
+	if !b.Get(targetX,targetY).IsFree { distances[index] = 1000; return }
+	if distances[index]>0 && distances[index]<1001 { distances[index] = min(distances[index],dist); return }
+
+	distances[index] = dist
+	if fromX == targetX && fromY == targetY { return }
+	
+	b.GetDistancesFromTo(fromX,fromY,targetX-1,targetY,distances,dist+1)
+	b.GetDistancesFromTo(fromX,fromY,targetX+1,targetY,distances,dist+1)
+	b.GetDistancesFromTo(fromX,fromY,targetX,targetY-1,distances,dist+1)
+	b.GetDistancesFromTo(fromX,fromY,targetX,targetY+1,distances,dist+1)
+}
+
+func (b *Board) GetNextDir() direction.Direction {
+	targetCell := b.GetTargetCell()
+
+	if targetCell.X == b.S.Player.X && targetCell.Y == b.S.Player.Y {
+		return b.S.BestSubBoardDir
+	} else {
+		distances := make([]int,b.Width*b.Height)
+		for i:=0;i<len(distances);i++ { distances[i] = 1001 }
+		b.GetDistancesFromTo(b.S.Player.X,b.S.Player.Y,targetCell.X,targetCell.Y,distances,1)
+
+		index := b.S.Player.X+b.S.Player.Y*b.Width
+		dU := distances[index-b.Width]
+		dD := distances[index+b.Width]
+		dL := distances[index-1]
+		dR := distances[index+1]
+		minD := min(dU,dD,dL,dR)
+		fmt.Printf("U %02d D %02d L %02d R %02d\n",dU,dD,dL,dR)
+
+		fmt.Printf("Min distance is %02d\n",minD)
+
+		if dU == minD { return direction.U }
+		if dD == minD { return direction.D }
+		if dL == minD { return direction.L }
+		return direction.R
+	}
+}
+
 func (S *SubBoard) GetString() string {
 	if S.str != "" { return S.str }
 	index := 0

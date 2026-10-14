@@ -142,7 +142,7 @@ func (v *View) Draw() {
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)
 		v.printString(fmt.Sprintf("Boxes : %02d",len(v.m.Board.S.Boxes)),48,8)
 		v.printString(fmt.Sprintf("MeanMoves : %02d",v.m.Board.S.MaxMoves),48,9)
-		v.printString("---Controls---\n\nCursors:  Move\nZ:        Undo\nR:       Reset\nTab: SwitchLayer\nEscape:   Quit", 48, 14)
+		v.printString("---Controls---\n\nCursors:  Move\nZ:        Undo\nR:       Reset\nTab: SwitchLayer\nAutoMove:    A\nEscape:   Quit", 48, 13)
 	case model.StateLevelComplete:
 		v.drawBoardLayer()
 		v.printString(fmt.Sprintf("Level %02d of %02d", v.m.LM.GetCurrentLevelNumber(), v.m.LM.GetFinalLevelNumber()), 48, 7)

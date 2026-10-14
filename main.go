@@ -82,6 +82,11 @@ func run() {
 				c.HandleInput(pixelgl.KeyTab)
 			}
 			lastKey = pixelgl.KeyTab
+		} else if win.Typed() == "a" {
+			if lastKey != pixelgl.KeyA {
+				c.HandleInput(pixelgl.KeyA)
+			}
+			lastKey = pixelgl.KeyA
 		} else {
 			lastKey = pixelgl.UnknownButton
 		}

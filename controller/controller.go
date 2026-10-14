@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	pixelgl "github.com/gopxl/pixel/v2"
 	"github.com/TheInvader360/sokoban-go/direction"
@@ -10,6 +11,8 @@ import (
 
 type Controller struct {
 	m *model.Model
+	autoplay bool
+	autoTime *time.Ticker
 }
 
 // NewController - Creates a controller
@@ -46,6 +49,8 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 			c.restartLevel()
 		case pixelgl.KeyTab:
 			c.switchLayer()
+		case pixelgl.KeyA:
+			c.toggleAutoplay()
 		}
 	case model.StateLevelComplete:
 		if key == pixelgl.KeySpace {
@@ -55,6 +60,35 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 		if key == pixelgl.KeySpace {
 			c.StartNewGame()
 		}
+	}
+}
+
+func (c *Controller) Autoplay() {
+
+	if (c.autoplay && c.m.State == model.StatePlaying) {
+		pathDir := c.m.Board.GetNextDir()
+		c.tryMovePlayer(pathDir)	
+	}
+}
+
+func (c *Controller) toggleAutoplay() {
+	if (c.autoplay) { 
+		c.autoplay = false
+		c.autoTime.Stop()
+	} else {
+		c.autoplay = true
+		
+		c.autoTime = time.NewTicker(250 * time.Millisecond)
+
+		go func() {
+			for {
+				if (!c.autoplay) { return }
+				select {
+					case <-c.autoTime.C:
+						c.Autoplay()
+				}
+			}
+		}()
 	}
 }
 
@@ -107,13 +141,20 @@ func (c *Controller) tryUndoLastMove() {
 	fmt.Printf("Player undo last move\n")
 }
 
+func (c *Controller) loadLevel() {
+	autoplay := c.autoplay
+	if c.autoplay { c.toggleAutoplay() }
+	l := c.m.LM.GetCurrentLevel()
+	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
+	c.m.State = model.StatePlaying
+	if autoplay { c.toggleAutoplay() }
+}
+
 // tryStartNextLevel - Starts the next level if the current one isn't the last, else sets game state to game complete
 func (c *Controller) tryStartNextLevel() {
 	if c.m.LM.HasNextLevel() {
 		c.m.LM.ProgressToNextLevel()
-		l := c.m.LM.GetCurrentLevel()
-		c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
-		c.m.State = model.StatePlaying
+		c.loadLevel()
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
 		c.m.Guess()
 	} else {
@@ -124,9 +165,7 @@ func (c *Controller) tryStartNextLevel() {
 
 // restartLevel - Resets the game board to the current level's starting state
 func (c *Controller) restartLevel() {
-	l := c.m.LM.GetCurrentLevel()
-	c.m.Board = model.NewBoard(l.MapData, l.Width, l.Height)
-	c.m.State = model.StatePlaying
+	c.loadLevel()
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
 	c.m.Guess()
 }
