@@ -64,7 +64,6 @@ func (c *Controller) HandleInput(key pixelgl.Button) {
 }
 
 func (c *Controller) Autoplay() {
-
 	if (c.autoplay && c.m.State == model.StatePlaying) {
 		pathDir := c.m.Board.GetNextDir()
 		c.tryMovePlayer(pathDir)	
@@ -121,6 +120,18 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 			if c.m.Board.IsComplete() {
 				c.m.State = model.StateLevelComplete
 				fmt.Print("*** Level complete! ***\n(space key to continue)\n")
+				nextLevelTicker := time.NewTicker(3000 * time.Millisecond)
+				go func() {
+					for {
+						if c.m.State != model.StateLevelComplete { nextLevelTicker.Stop(); return }
+						select {
+							case <-nextLevelTicker.C:
+								nextLevelTicker.Stop()
+								c.tryStartNextLevel()
+								return
+						}
+					}
+				}()
 			}
 		case model.PlayerMove :
 			fmt.Printf("%v: Player moved (clear)\n", dir)
