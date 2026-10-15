@@ -85,9 +85,8 @@ func (b *Board) GetNextDir() direction.Direction {
 		dL := distances[index-1]
 		dR := distances[index+1]
 		minD := min(dU,dD,dL,dR)
-		fmt.Printf("U %02d D %02d L %02d R %02d\n",dU,dD,dL,dR)
-
-		fmt.Printf("Min distance is %02d\n",minD)
+		if debugPrint { fmt.Printf("U %02d D %02d L %02d R %02d\n",dU,dD,dL,dR) }
+		if debugPrint { fmt.Printf("Min distance is %02d\n",minD) }
 
 		if dU == minD { return direction.U }
 		if dD == minD { return direction.D }

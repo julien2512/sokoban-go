@@ -26,6 +26,7 @@ func NewController(m *model.Model) *Controller {
 
 // StartNewGame - Starts a new game at level 1
 func (c *Controller) StartNewGame() {
+	if c.autoplay { c.toggleAutoplay() }
 	c.m.LM.Reset()
 	c.tryStartNextLevel()
 }
