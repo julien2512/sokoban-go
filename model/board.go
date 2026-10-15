@@ -168,6 +168,11 @@ type Board struct {
 	LastMove      *LastMove
 }
 
+func (b *Board) GetCloneBoard() *Board {
+	clone := &Board{S:b.S,Width:b.Width,Height:b.Height,Goals:b.Goals,Distances:b.Distances}
+	return clone
+}
+
 // NewBoard - Creates a board (map data encoding: Player "@", Box "$", Goal ".", Wall "#", Goal+Player "+", Goal+Box "*")
 func NewBoard(mapData string, boardWidth, boardHeight int) *Board {
 	b := Board{S:&SubBoard{}}
@@ -786,26 +791,28 @@ var debugPrint bool = false
 func (b *Board) Guess() int {
 	goal := false
 	var GoalSubBoard *SubBoard
+
+	clone := b.GetCloneBoard()
 	
 	g := NewGuesser()
-	g.Push(b.S,0)
+	g.Push(clone.S,0)
 
-	saveSubBoard := b.S
+	saveSubBoard := clone.S
 
 	for len(g.Next)>0 && !goal {
 		current := g.Pop()
 		currentDeep := current.Deep
-		b.S = current.S
+		clone.S = current.S
 
 		if (debugPrint) {
-			fmt.Printf("Pop Board %s at %02d moves and deep %02d---------\n",b.S.GetString(),b.S.MaxMoves,currentDeep)
+			fmt.Printf("Pop Board %s at %02d moves and deep %02d---------\n",clone.S.GetString(),clone.S.MaxMoves,currentDeep)
 			fmt.Printf("There is %02d subboards\n",len(g.Next))
 			g.PrintGuesser()
-			current.S.PrintSubBoard(b.Width,b.Height)
+			current.S.PrintSubBoard(clone.Width,clone.Height)
 		}
-		for i:=0;i<len(b.S.Boxes)&&!goal;i++ {
+		for i:=0;i<len(clone.S.Boxes)&&!goal;i++ {
 			for dir:=0;dir<4&&!goal;dir++ {
-				S := b.CheckMoveCostsForOneBox(i,direction.U+direction.Direction(dir))
+				S := clone.CheckMoveCostsForOneBox(i,direction.U+direction.Direction(dir))
 				if S!=nil && S.MaxMoves<1000 {
 					if S.MaxMoves == 0 { 
 						goal=true
@@ -815,23 +822,23 @@ func (b *Board) Guess() int {
 					if debugPrint { fmt.Printf("Push board %s at %02d moves and %02d deep\n",S.GetString(),S.MaxMoves,currentDeep+1) }
 					g.Push(S,currentDeep+1);
 					if debugPrint {
-						S.PrintSubBoard(b.Width,b.Height) 
+						S.PrintSubBoard(clone.Width,clone.Height) 
 						fmt.Printf("There is %02d subboards\n",len(g.Next))
 					}
 				} else if debugPrint && S!=nil { fmt.Printf("Skip board %s at %02d moves and %02d deep\n",S.GetString(),S.MaxMoves,currentDeep+1) }
 			}
 		}
 	}
-	b.S = saveSubBoard
+	clone.S = saveSubBoard
 
 	if goal {
 		var parent *SubBoard
-		if debugPrint { fmt.Println("Goal !");GoalSubBoard.PrintSubBoard(b.Width,b.Height) }
+		if debugPrint { fmt.Println("Goal !");GoalSubBoard.PrintSubBoard(clone.Width,clone.Height) }
 		for parent != saveSubBoard {
 			parent = g.Checked[GoalSubBoard.ParentSubBoard.GetString()].S
 			parent.BestSubBoardDir = GoalSubBoard.ParentSubBoardDir
 			parent.BestSubBoardBox = GoalSubBoard.ParentSubBoardBox
-			if debugPrint { parent.PrintSubBoard(b.Width,b.Height) }
+			if debugPrint { parent.PrintSubBoard(clone.Width,clone.Height) }
 			GoalSubBoard = parent
 		}
 	} else if debugPrint { fmt.Println("Fail !") }

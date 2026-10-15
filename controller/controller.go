@@ -110,7 +110,7 @@ func (c *Controller) switchLayer() {
 // tryMovePlayer - Move player (and an adjacent box where appropriate) in the specified direction if possible. Check for board completion (and handle appropriately) if a box is moved
 func (c *Controller) tryMovePlayer(dir direction.Direction) {
 	_,typ := c.m.Board.MovePlayer(dir,true)
-	c.m.Guess()
+	c.Guess()
 	switch(typ) {
 		case model.PlayerBlockedByWall :
 			fmt.Printf("%v: Player blocked (wall)\n", dir)
@@ -127,10 +127,16 @@ func (c *Controller) tryMovePlayer(dir direction.Direction) {
 	}
 }
 
+func (c *Controller) Guess() {
+	autoplay := c.autoplay
+	if c.autoplay { c.toggleAutoplay() }
+	c.m.Guess()
+	if autoplay { c.toggleAutoplay() }	
+}
+
 func (c *Controller) tryUndoLastMove() {
 	_,ret := c.m.Board.UndoLastMove()
-	c.m.Board.Update()
-	c.m.Guess()
+	c.Guess()
 
 	switch(ret) {
 		case model.NoUndo :
@@ -156,7 +162,7 @@ func (c *Controller) tryStartNextLevel() {
 		c.m.LM.ProgressToNextLevel()
 		c.loadLevel()
 		fmt.Printf("Start level %d\n", c.m.LM.GetCurrentLevelNumber())
-		c.m.Guess()
+		c.Guess()
 	} else {
 		c.m.State = model.StateGameComplete
 		fmt.Print("*** GAME COMPLETE! ***\n(space key to restart)\n")
@@ -167,5 +173,5 @@ func (c *Controller) tryStartNextLevel() {
 func (c *Controller) restartLevel() {
 	c.loadLevel()
 	fmt.Printf("Restart level %d\n", c.m.LM.GetCurrentLevelNumber())
-	c.m.Guess()
+	c.Guess()
 }
